@@ -1,0 +1,57 @@
+The classes in the project:
+
+	  SingleSequenceNode				
+			A building block of SingleSequence. Has a number entry, a parent link and a child link 
+	  SingleSequence 				
+	  		A element in \omega^{<\omega}, has SingleNode* pointers to the first and last entry of the sequence
+
+	  DoubleSequenceNode				
+	  		A building block of DoubleSequence. Has a SingleSequence* entry, a parent link and a child link
+	  DoubleSequence				
+	  		A element in (\omega^{\omega})^<{\omega}, has DoubleNode* pointers to the first and last entry of the sequence
+
+	  LevelOneTreeNode			:		SingleSequence	
+	  		A building block of a level-1 tree
+	  LevelOneTree
+	  		A level-1 tree
+
+	  TreeOfLevelOneTreeNode     : 		DoubleSequence
+	  TreeOfLevelOneTree            
+	  		A tree of level-1 trees
+
+	  PartialLevelOneTree           
+	  		A partial level-1 tree
+
+	  LevelTwoTreeBlock 		: 		DoubleSequence
+	  LevelTwoTree                  
+	  		A level-2 tree
+
+	  PartialLevelOneNode
+	  PartialLevelOneTower          
+	  		A partial level-1 tower
+
+	  LevelOneDescription
+
+	  LevelTwoDescription
+
+	  LevelUpToTwoDescription
+
+	  LevelOneFactorNode		: 		SingleSequence
+	  LevelOneFacotr
+
+	  Level_21_Description
+
+	  Level_121_FactorNode		:		SingleSequence
+	  Level_121_Factor
+
+	  Level_221_Description
+
+	  Level_222_FactorNode		: 		DoubleSequence
+	  Level_222_Factor
+
+	  Level_322_Description
+
+	  Level_332_FactorNode		:		DoubleSequence
+	  Level_332_Factor
+
+
