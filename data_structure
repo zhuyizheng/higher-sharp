@@ -10,8 +10,8 @@ The classes in the project:
 					|					|
 					|inherit				|inherit
 					|					|
-				AttrLevelOneNode 		  	 AttrDoubleNode
-				
+				AttrLevelOneNode ------------------------  AttrDoubleNode
+							inherit
 				
 			(consists of LevelOneNode's)		    (consists of DoubleNode's)
 					↓					↓
@@ -23,7 +23,7 @@ The classes in the project:
 	 appended to	    →	AttrLevelOneTree	 	   	AttrDoubleTwoTree
 	 every node	}		|					|
 					|					|	
-					|inherit				|
+					|inherit				|inherit
 					|					|
 					|					|
 			      LevelOneFactor,etc. ①		   LevelTwoTree, etc. ②
@@ -38,11 +38,9 @@ The classes in the project:
 	PartialLevelOneTree
 	PartialLevelOneTower
 
-	LevelOneDescription
-
 	LevelTwoDescription
 
-	LevelUpToTwoDescription
+	Level_leq_2_escription
 
 	Level_21_Description
 
