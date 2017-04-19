@@ -3,64 +3,50 @@ The classes in the project:
 	
 	
 	
-  (a node in (omega x something)^<omega)	       	(a node in ((omega^<omega) x something)^<omega)
-  	     ↓								↓
-	SingleNode  ------------  LevelOneNode  ------------------  DoubleNode  
-		      inherit		|	     inherit		|
-					|				|
-					|inherit			|inherit
-					|				|
-				AttrLevelOneNode 		   AttrDoubleNode
+  (a node in (omega x something)^<omega)	         	(a node in ((omega^<omega) x something)^<omega)
+  	     ↓									↓
+	SingleNode  ------------  LevelOneNode  ----------------------------DoubleNode  
+		      inherit		|	  	   inherit		|	   
+					|					|
+					|inherit				|inherit
+					|					|
+				AttrLevelOneNode 		  	 AttrDoubleNode
 				
 				
-			(consists of LevelOneNode's)		(consists of DoubleNode's)
-					↓				   ↓
-		  		  LevelOneTree		  	      DoubleTree
-				 	|				   |
-				 	|				   |
-				 	|inherit		  	   |inherit
-	(An extra element 		|			           |
-	 appended to	    →	AttrLevelOneTree	 	    AttrDoubleTwoTree
-	 every node	}		|
-					|inherit
-					|------- LevelOneFactor,etc.
-				inherit	|
-					|
-			       	 LevelTwoTree
+			(consists of LevelOneNode's)		    (consists of DoubleNode's)
+					↓					↓
+		  		  LevelOneTree		  	 	   DoubleTree
+				 	|					|
+				 	|					|
+				 	|inherit		  		|inherit
+	(An extra element 		|					|
+	 appended to	    →	AttrLevelOneTree	 	   	AttrDoubleTwoTree
+	 every node	}		|					|
+					|					|	
+					|inherit				|
+					|					|
+					|					|
+			      LevelOneFactor,etc. ①		   LevelTwoTree, etc. ②
 						  
 				  
+			①: 	Level_121_factor  		②:	LevelTwoFactor
+				  					Level_222_Factor
+									LevelThreeTree
+									Level_332_Factor
 				  
 				  
-				  
-				  
-				  PartialLevelOneTree
-	
-	
-	
-	
-	
+	PartialLevelOneTree
+	PartialLevelOneTower
 
-	  PartialLevelOneTower          
-	  		A partial level-1 tower
+	LevelOneDescription
 
-	  LevelOneDescription
+	LevelTwoDescription
 
-	  LevelTwoDescription
+	LevelUpToTwoDescription
 
-	  LevelUpToTwoDescription
+	Level_21_Description
 
-	  LevelOneFacotr
+	Level_221_Description
 
-	  Level_21_Description
-
-	  Level_121_Factor
-
-	  Level_221_Description
-
-	  Level_222_Factor
-
-	  Level_322_Description
-
-	  Level_332_Factor
-
+	Level_322_Description
 
