@@ -1,24 +1,30 @@
 from copy import deepcopy
 from sets import Set
+from itertools import combinations
 
+indent  = 2
+
+def printempty(d):
+	for i in range(d):
+		print(' '),
 
 def SingleMinusOne():      
     # creates (-1), a single node 
     return SingleNode([-1])
 def DoubleMinusOne():
     # creates ((-1)), a double node
-    return DoubleNode([SingleNode(-1)])
+    return DoubleNode([SingleMinusOne()])
 
 class SingleNode(object):
     ' a node in (*)^<omega'
     def __init__(self,entry = []):        #create a node in (*)^<omega
         
-        self.entry = entry        #by default, the entry is empty sequence
+        self.entry = deepcopy(entry)        #by default, the entry is empty sequence
     
     def Enumerate (self):       # Enumerate the entry of the node
         s = []
-        for i in range (len(self.entry)):
-                s .append(self.entry [i])
+        for a in self.entry:
+                s .append(a)
         return s
         
     def Output(self):
@@ -55,6 +61,9 @@ class SingleNode(object):
         elif type(self.Entry(-1)) is int:
             if self.Entry(-1) == -1:
                 return True
+        elif type(self.Entry(-1)) is SingleNode:
+            if self.Entry(-1) == SingleMinusOne():
+                return True
         else:
             return False
     def IsDiscontinuousType(self):
@@ -74,17 +83,23 @@ class SingleNode(object):
             return -2
         else:
             return self.entry[k]
- 
+    
+    def LastEntry(self):
+        return self.entry(-1)
+    
     def MakeEntry(self,s):
         self.entry = s
 
     def Append( self, a):   # append a to the end
-        return SingleNode( self.Enumerate + [a])
+        self.entry.append( deepcopy(a) )
+        return self
         
+    def AppendSingleMinusOne( self):
+        self.Append( -1 )
+        return self
+    
     def RestrictedTo(self, i):  #s restrcted to i
-        return (SingleNode( s.entry[:i]))
-
-        
+        return SingleNode( self.entry[:i])
         
     def LengthOfIntersection(self,s):        #the length of common part of self and s
     
@@ -94,10 +109,7 @@ class SingleNode(object):
         return min(self.Length(), s.Length())
     
     def Intersection(self,s):        #the intersection of self and s
-        
-        t = SingleNode()
-        t.MakeEntry( s.entry[:self.LengthOfIntersection(s)] )
-        return t  
+        return SingleNode(s.entry[:self.LengthOfIntersection(s)])
 
     ####  reload operators    #####
     ####    by comparing the entries ###
@@ -127,8 +139,6 @@ class SingleNode(object):
         
     def __ge__(self,s):             #self >= s
         return not self < s
-
-
 
 class LevelOneNode(SingleNode):
     ' a node in omega^<omega with info to make a part of a level-1 tree'
@@ -229,7 +239,7 @@ class LevelOneTree(object):
     def __init__(self):
         self.cardinality = 0
         self.root = LevelOneNode() 
-        
+    
     def Cardinality(self):
         return self.cardinality
         
@@ -303,7 +313,7 @@ class LevelOneTree(object):
         
         for i in range(s.Length()):
             
-            if current.number_of_children <= s.Entry(i):
+            if current.number_of_children <= s.Entry(i) or s.Entry(i) < 0 :
                 
                 return False
             
@@ -395,15 +405,17 @@ class LevelOneTree(object):
         self.cardinality = 0
         
         current = self.root
+        
+        printempty(d)
+        print("Input the level-1 tree:")
                 
         while True:
     
-            for i in range(d):
-                print(" "),
+            printempty(d+indent)
             
-            print ("Input the level-1 tree, immediate successors of"), 
+            print ("How many immediate successors of"), 
             current.Output() 
-            print (": "),
+            print ("?  "),
                     
             
             k = input()
@@ -412,27 +424,44 @@ class LevelOneTree(object):
             if k == 0:
                 
                 if current.IsEmpty():
-                    
-                    return
+					printempty(d)
+					print ("Level-1 tree input complete!")
+					return
                     
                 while current.IsLastBitRightMost():
-                    
                     current = current.parent
-                    
                     if current.IsEmpty():
-                    
-                        return
+						printempty(d)
+						print ("Level-1 tree input complete!")
+						return
                         
                 current = current.right
                 
             else:
                     
                 self.AddNodesBelow(current,k)
-                
                 current = current.first_child
-
+    
+    def BKEnumerate(self):      #enumerate the nodes in the BK order
+        
+        t = []
+        
+        if self.IsEmpty():
+            return t
+            
+        current = self.SmallestNode()
+        t.append(current)
+        
+        while (current.BKright is not None):
+            
+            current = current.BKright
+            t.append(current)
+            
+        return t
+        
+        
                 
-    def Enumerate (self):   #enumerate the nodes, NOT IN THE BK ORDER! in a way that every initial segment must form a subtree
+    def Enumerate (self):   #enumerate the nodes in the dictionary order, NOT IN THE BK ORDER!
         
         t = []
         
@@ -489,11 +518,25 @@ class DoubleNode (LevelOneNode):
         self.immediate_extensions = LevelOneTree() #the set of s such that self+[s] is in the tree
     
     def Minus(self):        #outputs self^-
-        
-        t = DoubleNode()
-        t.MakeEntry(self.entry[:-1])
-        return t
+        return DoubleNode( self.entry[:-1])
 
+
+    def DoubleRestrictedTo(self, i):  #s restrcted to i
+        return DoubleNode( self.entry[:i])
+
+
+    def IsDoubleMinusOne(self):
+        if self.Length() != 1:
+            return False
+        elif type(self.Entry(0)) is SingleNode:
+            if self.Entry(0).IsMinusOne():
+                return True
+        else:
+            return False
+    
+    def AppendDoubleMinusOne(self):
+        return self.Append( SingleMinusOne())
+        
     def AddChildBelow (self, s):            #add a child below the single node s, returns the new child
         
         if not s.IsEmpty():
@@ -518,17 +561,22 @@ class DoubleNode (LevelOneNode):
         new.parent = self
         #create a new node whose entry extends by s, parent point to self
         
-        
-        if not current.IsBKLeftMost():      #if current is not BKleftmost,
-                                            #its left and itself has new in between
-            new.BKleft = current.BKleft     #assign the left of new and vice versa
-            current.BKleft.BKright = new
+        if current.IsNonEmpty():
+            tempcurrentBKleft = current.BKleft
+            if (not current.IsBKLeftMost()):
+                                                #if current is not BKleftmost,
+                                                #its left and itself has new in between
+                new.BKleft = current.BKleft     #assign the left of new and vice versa
+                current.BKleft.BKright = new
+                
+                                                #otherwise, nothing to do
+                
+            new.BKright = current       #the right of the new node must be current
+            current.BKleft = new        #assign them under all cases
+        elif self.number_of_children > 1:
+            new.BKleft = current.last_child 
+            current.last_child.BKright = new
             
-                                            #otherwise, nothing to do
-            
-        new.BKright = current       #the right of the new node must be current
-        current.BKleft = new        #assign them under all cases
-
         #finished assign the BK order
         
         if self.number_of_children == 1:
@@ -547,7 +595,7 @@ class DoubleNode (LevelOneNode):
             
         elif s.IsNonEmpty():
             
-            new.left = current.BKleft
+            new.left = tempcurrentBKleft
             new.right = current
             current.left.right = new
             current.left = new
@@ -575,10 +623,7 @@ class DoubleNode (LevelOneNode):
         t = P.Enumerate()
         
         for i in range (1,P.cardinality):
-            u = deepcopy(t[i])
-            u.MakeEntry ( u.Enumerate()[:-1])
-            self.AddChildBelow (u)
-            del u
+            self.AddChildBelow ( t[i].Minus() )
             
         return new
          
@@ -809,10 +854,10 @@ class DoubleTree(object):
             
             print ("Input the double tree, immediate successors of"), 
             current.Output(),
-            print (": ")
+            print ("forms a level-1 tree:")
             
             K = LevelOneTree()
-            K.Input(d+1)
+            K.Input(d+indent)
             
             if K.IsEmpty():
                 
@@ -871,8 +916,8 @@ class PartialLevelOneTree(object):
     
     def __init__(self, tree = LevelOneTree(), node = SingleNode ([0])):     #by default, assign it the empty tree and the node with entry (0)
         
-        self.tree = tree
-        self.node = node
+        self.tree = deepcopy(tree)
+        self.node = deepcopy(node)
 
     def Degree (self):
         if self.node.IsMinusOne():
@@ -908,10 +953,16 @@ class PartialLevelOneTree(object):
     def __ne__(self,s):
         return not self == s
     
-    def IsPartialSubtree (P):
+    def IsPartialSubtree (self,P):
         if self.Degree() == 0:
             return False
         return self.Completion().IsSubtree(P)
+    
+    def IsContinuousType (self):
+        return self.node.IsContinuousType()
+    def IsDiscontinuousType(self):
+        return not self.IsContinuousType()
+        
 
 def MakePartialLevelOneTree (P):            ## makes a list of partial level-1 trees whose tree component is P
     
@@ -958,20 +1009,24 @@ class AttrLevelOneNode(LevelOneNode):
     def __init__(self, entry = []):
         
         super(AttrLevelOneNode,self).__init__(entry)
-        self.image = None
+        self.value = []
         
     def Variable(self):
         return self.entry
-    def Image(self):
-        return self.image
+    def Value(self):
+        return self.value
+    def LastValue(self):
+        return self.value[-1]
         
-    def MakeImage(self, image):
-        self.image = image
+    def MakeValue(self, value):
+        self.value = value
+    def MakeLastValue(self, value):
+        self.value[-1] = value
             
     def LengthOfIntersection(self,s):        #the length of common part of self and s
     
         for i in range ( min(self.Length(), s.Length()) ):
-            if self.entry[i] != s.entry[i] or self.image[i] == s.image[i]:
+            if self.entry[i] != s.entry[i] or self.value[i] == s.value[i]:
                 return i
         return min(self.Length(), s.Length())
     
@@ -979,16 +1034,16 @@ class AttrLevelOneNode(LevelOneNode):
         
         t = AttrLevelOneNode()
         t.entry = s.entry[:self.LengthOfIntersection(s)]
-        t.image = s.image[:self.LengthOfIntersection(s)]
+        t.value = s.value[:self.LengthOfIntersection(s)]
         return (t)   
 
 
-    def AddChild (self, y):            #add a child, with value y, returns the node of child
+    def AddChild (self, y):            #add a child, with value y on the last bit, returns the node of child
                 
         current = AttrLevelOneNode()
         
         current.entry = self.entry + [deepcopy(self.number_of_children)] 
-        current.image = self.image + [y]
+        current.value = self.value + [deepcopy(y)]
         
         current.parent = self
         
@@ -1021,7 +1076,7 @@ class AttrLevelOneNode(LevelOneNode):
     
     
     def __eq__(self,s):             #self == s
-        return self.entry == s.entry and self.image == s.image
+        return self.entry == s.entry and self.value == s.value
     
     def __ne__(self,s):             #self != s
         return not self==s
@@ -1032,6 +1087,56 @@ class AttrLevelOneTree(LevelOneTree):
     def __init__(self):
         super(AttrLevelOneTree,self).__init__()
         self.root = AttrLevelOneNode()
+
+    def CopyIntoDomain(self, Q):    #starting from empty map, copy Q into its domain
+
+        e = Q.Enumerate()
+        
+        self.cardinality = Q.cardinality 
+        
+        record = [[Q.root,  self.root]]
+        
+        for q in e:
+            new = AttrLevelOneNode()
+            new.entry = q.entry
+            record.append([q, new])
+        for [q1, s1] in record:
+            for [q2, s2] in record:
+                if q1.parent is not None:
+                    if q1.parent == q2:
+                        s1.parent = s2
+                if q1.left is not None:
+                    if q1.left == q2:
+                        s1.left = s2
+                if q1.right is not None:
+                    if q1.right == q2:
+                        s1.right = s2
+                if q1.BKright is not None:
+                    if q1.BKright == q2:
+                        s1.BKright = s2
+                if q1.BKleft is not None:
+                    if q1.BKleft == q2:
+                        s1.BKleft = s2
+                if q1.first_child is not None:
+                    if q1.first_child == q2:
+                        s1.first_child = s2
+                if q1.last_child is not None:
+                    if q1.last_child == q2:
+                        s1.last_child = s2
+        for [q, s] in record:
+            s.number_of_children = q.number_of_children
+        
+        return
+            
+    
+
+    def EnumerateWithValue(self):       #never used??
+        
+        e = self.Enumerate()
+        f = []
+        for p in e:
+            f.append ( [ p, self.Value(p)])
+        return f
     
     def IsSubtree (self, T):        #is self a subtree of T?
         
@@ -1057,7 +1162,7 @@ class AttrLevelOneTree(LevelOneTree):
                     return False
                 current = current.first_child
                 expected = expected.first_child 
-                while not expected.IsLastBitRightMost:
+                while not expected.IsLastBitRightMost():
                     if current == expected:
                         break
                 if current != expected:
@@ -1076,7 +1181,7 @@ class AttrLevelOneTree(LevelOneTree):
     def IsNonTrivial(self):
         return not self.IsTrivial()
     
-    def ContainsElementWithValue (self, s, y):   #is s NONEMPTY AND a member of T and y is the image of s? (by default, emptyset is not in any tree) 
+    def ContainsElementWithValue (self, s, y):   #is s NONEMPTY AND a member of T and y is the value of s? (by default, emptyset is not in any tree) 
 
         if self.IsTrivial():
             return False
@@ -1094,11 +1199,11 @@ class AttrLevelOneTree(LevelOneTree):
             
             while not current.IsLastBitRightMost():
                 
-                if current.entry == s and current.image == y:
+                if current.entry == s and current.value == y:
                     break
                 current = current.right
                     
-            if not (current.entry == s and current.image == y):
+            if not (current.entry == s and current.value == y):
                 return False
         
         return True
@@ -1108,10 +1213,8 @@ class AttrLevelOneTree(LevelOneTree):
         if s.IsEmpty():             # if empty sequence, add it
             
             self.cardinality += 1
-                        
-            new =  self.root.AddChild(y)
             
-            self.domain.AddChildBelow(s)
+            new = self.root.AddChild(y)
             
             return new
             
@@ -1127,22 +1230,24 @@ class AttrLevelOneTree(LevelOneTree):
         
         new = current.AddChild(y)
         
-        self.domain.AddChildBelow(s)
-        
         return new
     
     def MyNodeAtDomain (self, s):    #return the node in me pointing to s
         return self.MyNode(s)
     
-    def Value(self,s):              #returns the value at s 
-        
-        d = self.MyNodeAtDomain(s)
-        return d.image
+    def Value(self, s):         # get the value at s
+        return self.MyNodeAtDomain(s).Value()
+
+    
+    def LastValue(self,s):              #returns the value at s 
+        return self.MyNodeAtDomain(s).LastValue()
+
 
     def MakeValue(self,s,y):          #make the value at s y
-        
-        d = self.MyNodeAtDomain(s)
-        d.image = y
+        self.MyNodeAtDomain(s).value = y
+ 
+    def MakeLastValue(self, s, y):
+        self.MyNodeAtDomain(s).value[-1] = y
     
 class AttrDoubleNode (AttrLevelOneNode, DoubleNode):
     'A node in (omega^<omega x something)^{<omega}'
@@ -1152,7 +1257,7 @@ class AttrDoubleNode (AttrLevelOneNode, DoubleNode):
         
         t = AttrDoubleNode()
         t.entry = s.entry[:self.LengthOfIntersection(s)]
-        t.image = s.image[:self.LengthOfIntersection(s)]
+        t.value = s.value[:self.LengthOfIntersection(s)]
         return (t)   
     
 class AttrDoubleTree (AttrLevelOneTree, DoubleTree):
@@ -1196,15 +1301,20 @@ class AttrDoubleTree (AttrLevelOneTree, DoubleTree):
     def MyDoubleNodeAtDomain (self, s):    #return the node in me pointing to s
         return self.MyDoubleNode(s)
     
-    def DoubleValue(self,s):              #returns the value at s 
-        
+    def DoubleLastValue(self,s):              #returns the last value at s 
         d = self.MyDoubleNodeAtDomain(s)
-        return d.image
-
+        return d.LastValue()
+        
+    def DoubleValue(self,s):              #returns the value at s 
+        d = self.MyDoubleNodeAtDomain(s)
+        return d.Value()
+        
     def MakeDoubleValue(self,s,y):          #make the value at s y
         
-        d = self.MyDoubleNodeAtDomain(s)
-        d.image = y
+        self.MyDoubleNodeAtDomain(s).value = y
+    
+    def MakeDoubleLastValue(self, s, y):
+        self.MyDoubleNodeAtDomain(s).value[-1] = y
     
 class LevelTwoTree(AttrDoubleTree):
     'a level-2 tree'
@@ -1213,50 +1323,97 @@ class LevelTwoTree(AttrDoubleTree):
         
         super(LevelTwoTree,self).__init__()
         self.root = AttrDoubleNode()
-        self.root.image = PartialLevelOneTree()
-        cardinality = 1
-        
-    def DoubleValue(self, s):
+        self.root.value = [PartialLevelOneTree()]
+        self.cardinality = 1
+    
+    def LevelTwoValue(self, s):
         if s.IsNonEmpty():
-            return AttrDoubleTree.DoubleValue(self, s)
-        return self.root.image
+            return self.DoubleValue(s)
+        return self.root.Value()
         
+    def LevelTwoLastValue(self, s):
+        if s.IsNonEmpty():
+            return self.DoubleLastValue(s)
+        return self.root.LastValue()
+    
+    def CopyIntoLevelTwoDomain(self, Q): #copy the double tree Q as its domain
+        
+        e = Q.Enumerate()
+        
+        self.cardinality = Q.cardinality + 1 
+        
+        record = [[Q.root,  self.root]]
+        
+        for q in e:
+            new = AttrDoubleNode()
+            new.entry = q.entry
+            record.append([q, new])
+        for [q1, s1] in record:
+            for [q2, s2] in record:
+                if q1.parent is not None:
+                    if q1.parent == q2:
+                        s1.parent = s2
+                if q1.left is not None:
+                    if q1.left == q2:
+                        s1.left = s2
+                if q1.right is not None:
+                    if q1.right == q2:
+                        s1.right = s2
+                if q1.BKright is not None:
+                    if q1.BKright == q2:
+                        s1.BKright = s2
+                if q1.BKleft is not None:
+                    if q1.BKleft == q2:
+                        s1.BKleft = s2
+                if q1.first_child is not None:
+                    if q1.first_child == q2:
+                        s1.first_child = s2
+                if q1.last_child is not None:
+                    if q1.last_child == q2:
+                        s1.last_child = s2
+        for [q, s] in record:
+            s.number_of_children = q.number_of_children
+            s.immediate_extensions = q.immediate_extensions
+        
+        return
+    
     def Input(self,d):
         
-        for i in range(d):
-            print(" "),
+        printempty(d)
+        print ("Input the level-2 tree. Its domain is a double tree:")
         
-        print ("Input the level-2 tree:")
+        Q = DoubleTree()
+        Q.Input(d+indent)
         
-        DoubleTree.Input(self,d+1)
-        
+        self.CopyIntoLevelTwoDomain(Q) 
+                
         e = self.EnumerateDomain()
         
         for ee in e:
             
-            partial = self.DoubleValue(ee.Minus())
+            partial = self.LevelTwoLastValue(ee.Minus())
             completion = partial.Completion()
             partial_extend = MakePartialLevelOneTree(completion)
             partial_extend_node = EnumerateNodesOfPartialLevelOneTree(completion)
             
-            print "Possible values of the node component at", 
+            printempty(d)
+            print "Possible values of the node component of this level-2 tree at", 
             ee.Output() 
             print ":"
             
+            printempty(d+indent)
             for i in range(len(partial_extend_node)):
                 print i+1, ". ", 
                 partial_extend_node[i].Output()
                 print " "
+            printempty(d+indent)
+            k = input("which one?  ")
+            
+            self.MakeDoubleValue(ee,  self.LevelTwoValue(ee.Minus()) + [ partial_extend[k-1] ])
+            
+            printempty(d)
+            print("Level-2 tree input complete!")
 
-            for i in range(d):
-                print(" "),
-            
-            k = input("which one? ")
-            
-            self.MakeDoubleValue(ee,partial_extend[k-1])
-        
-        print("Level-2 tree input complete!")    
-    
     def ContainsInDomain(self,s):               # does dom(self) contain the double node s?
         if self.ContainsDoubleElement(s):
             return True
@@ -1267,18 +1424,18 @@ class LevelTwoTree(AttrDoubleTree):
     def ContainsInDomainStar(self,s):       #does dom^*(self) contain the double node s?
         if self.ContainsInDomain(s):
             return True
-        if s.IsMinusOne():  #(-1) is always in the extended domain
+        if s.IsDoubleMinusOne():  #(-1) is always in the extended domain
             return True
         if s.IsContinuousType() and self.ContainsDoubleElement(s.Minus()):
             return True
         return False
     
     def GetPartialLevelOneTower(self,s):    #outputs the Q[s], the partial level <=1 tower of discontinuous type, for s in dom^*(Q)
-       
+            
         if self.ContainsInDomain(s):        #when s in dom(Q), the output is of discontinous type
             t = PartialLevelOneTower()
-            for i in range(s.Length()):
-                t.AppendPartialTree( self.Value( s.RestrictedTo(i)) )  
+            for i in range(1, s.Length()+1):
+                t.AppendPartialTree( self.LevelTwoLastValue( s.DoubleRestrictedTo(i)) )  
             return t
             
         if self.ContainsInDomainStar(s):    #when s in dom*(Q)\dom(Q), the output is of continous type
@@ -1286,20 +1443,26 @@ class LevelTwoTree(AttrDoubleTree):
             t.AppendCompletion()
             return t
             
- 
+    def GetLevelTwoDescription(self,s):     #outputs the Q-description ( s, Q[s])
+        
+        return LevelTwoDescription( s, self.GetPartialLevelOneTower(s) )
+            
+    def EnumerateLevelTwoDomain(self):            
+        
+        return [ DoubleNode() ] + AttrDoubleTree.EnumerateDomain(self)
     
 class PartialLevelOneTower:
     'partial level <=1 tower'
     #we don't define potential partial level <=1 tower, as it is 
     #easily coded in a partial level <=1 tower
     
-    def __init__(self, tree_sequence = [LevelOneTree()], node_sequence = [(0)]):
+    def __init__(self, tree_sequence = [LevelOneTree()], node_sequence = [SingleNode([0])]):
     #
     # by default, it constructs ([empty],[(0)]), which is Q([0]) for any level-2 tree Q
     #
         
-        self.tree_sequence = tree_sequence
-        self.node_sequence = node_sequence
+        self.tree_sequence = deepcopy(tree_sequence)
+        self.node_sequence = deepcopy(node_sequence)
     
     def IsContinuousType(self):
         return len(self.tree_sequence) == len(self.node_sequence)+1
@@ -1307,23 +1470,25 @@ class PartialLevelOneTower:
     def IsDiscontinuousType(self):
         return len(self.tree_sequence) == len(self.node_sequence)
     
-    def TreeLength(self):
+    def LengthOfTree(self):
         return len(self.tree_sequence)
-    def NodeLength(self):
+    def LengthOfNode(self):
         return len(self.node_sequence)
     
-    def Tree(self, i):
-        if i < self.TreeLength():
+    def TreeEntry(self, i):
+        if i >= self.LengthOfTree():
             print("This partial level-1 tower does not have so many trees!")
             return
         return self.tree_sequence[i]
         
-    def Node(self, i):
-        if i < self.NodeLength():
+    def NodeEntry(self, i):
+        if i >= self.LengthOfNode():
             print("This partial level-1 tower does not have so many node!")
             return
         return self.node_sequence[i]
     
+    def NodeSequence(self):
+        return self.node_sequence
     
     def Signature(self):                    #signature
         if self.IsDiscontinuousType():
@@ -1331,8 +1496,11 @@ class PartialLevelOneTower:
         else:
             return self.node_sequence
     
-    def LastTree(self):
+    def Tree(self):
         return self.tree_sequence[-1]
+        
+
+    
     def LastNodeWhenContinuous(self):
         if self.IsContinuousType:
             return self.node_sequence[-1]
@@ -1352,61 +1520,69 @@ class PartialLevelOneTower:
     
     def Completion(self):           #the completion when discontinuous type
         if self.IsDiscontinuousType():
-            return self.LastPartialTreeWhenDiscontinuous().Completion
+            return self.LastPartialTreeWhenDiscontinuous().Completion()
             
     def AppendCompletion(self):      #append the comletion to make it continous type
-        self.tree.append( self.Completion())
+        self.tree_sequence.append( self.Completion())
+        return self
     
     def AppendPartialTree(self, P): #append a partial tree to discontinuous type. The result remains discontinous type
         if self.IsDiscontinuousType():
             self.tree_sequence.append( P.tree )
             self.node_sequence.append( P.node )
+        return self
     
-    def Decapped(self):             # when continuous type, outputs the one without the last tree
-        return PartialLevelOneTower(   self.tree_sequence[:-1]  , self.node_sequence)
+    def AppendNode(self, p):        #append a node to a continuous type. makes it discontinuous type
+        self.node_sequence.append( p )
+        return self
     
-    def Completed(self):            #when discontinous type, outputs the one with a completion attached
-        return PartialLevelOneTower(   self.tree_sequence + [ self.Completion]  , self.node_sequence)
-        
     def __eq__(self, PP):
         return self.tree_sequence == PP.tree_sequence and self.node_sequence == PP.node_sequence
         
     def __ne__(self,PP):
         return not self == PP
         
+    
+
+def Decapped(PP):             # when continuous type, outputs the one without the last tree
+    return PartialLevelOneTower(   PP.tree_sequence[:-1]  , PP.node_sequence)
+
+def Completed(PP):            #when discontinous type, outputs the one with a completion attached
+    return PartialLevelOneTower(   PP.tree_sequence + [ PP.Completion()]  , PP.node_sequence)
+    
 #    def __lt__(self,PP):        #self is a proper initial segment of PP
             
-        
-    
 class LevelOneFactor (AttrLevelOneTree):
     'level-1 factoring map'
     ##(empty,empty) is not a node in this paper. We just make it a node for convenience
     
     def __init__(self):
         super(LevelOneFactor,self).__init__()
-        self.root.MakeValue( SingleNode() )
+        self.root.MakeValue( [] )
         
     def IsFactor(self):     # is it a level-1 factoring map?
         if self.IsEmpty():
             return True
         current = self.SmallestNode()
-        while (current.BKright != self.GreatestNode()):
-            if self.Value(current) >= self.Value(current.BKright):
+        while (current.BKright is not None):
+            if self.LastValue(current) >= self.LastValue(current.BKright):
                 return False
-        if self.Value(current) >= self.Value(current.BKright):
+            current = current.BKright
+        if self.LastValue(current) >= self.LastValue(current.BKright):
             return False
         return True
     
     def IsFactorInto(self, W):      # is it a level-1 factoring map into W?
-        if self.IsEmpty():
+        if self.IsTrivial():
             return True
         if not self.IsFactor():
             return False
         current = self.SmallestNode()
-        while (current.BKright != self.GreatestNode()):
-            if not W.ContainsElement(self.Value(current)):
+        while (current.BKright is not None):
+            if not W.ContainsElement(self.LastValue(current)):
                 return False
-        if not W.ContainsElement(self.Value(current)):
+            current = current.BKright
+        if not W.ContainsElement(self.LastValue(current)):
             return False
         return True
     
@@ -1416,22 +1592,24 @@ class LevelOneFactor (AttrLevelOneTree):
             return False
             
         current = self.SmallestNode()
-        while (current.BKright != self.GreatestNode()) : 
-            if s == self.Value (current) :
+        while (current.BKright is not None) : 
+            if s == self.LastValue (current) :
                 return True
-            s = s.BKright
-        if s == self.Value (current) :
+            current = current.BKright
+            
+        if s == self.LastValue (current) :
             return True
+            
         return False
-        
-        
+    
 
+    
 class Level_leq_2_Node:     
     'a node of the form (1,q), q in omega^<omega, or (2,q), q in omega^{omega^<omega}'
     
     def __init__(self, degree = 2, node = DoubleNode()):
-        self.degree = degree
-        self.node = node
+        self.degree = deepcopy(degree)
+        self.node = deepcopy(node)
     
     def Degree(self):
         return self.degree
@@ -1447,6 +1625,8 @@ class Level_leq_2_Node:
     def __lt__(self,q):
         if self.degree < q.degree:
             return True
+        elif self.degree > q.degree:
+            return False
         else:
             return self.node < q.node
     def __le__(self,q):
@@ -1459,8 +1639,8 @@ class Level_leq_2_Node:
 class Level_leq_2_Tree:
     
     def __init__(self, tree_1 = LevelOneTree(), tree_2 = LevelTwoTree()):
-        self.tree_1 = tree_1
-        self.tree_2 = tree_2
+        self.tree_1 = deepcopy(tree_1)
+        self.tree_2 = deepcopy(tree_2)
     
     def Level_1_Component (self):
         return self.tree_1
@@ -1475,17 +1655,18 @@ class Level_leq_2_Tree:
         if q.Degree() == 1:
             return self.tree_1.ContainsElement(q.Node())
         if q.Degree() == 2:
-            return self.tree_2.ContainsDoubleElement(q.Node())
+            return self.tree_2.ContainsInDomain(q.Node())
     
-    def Value(q):                       #when q is of degree 2 and in its domain, output its value. otherwise None.
+    def LevelTwoValue(self,q):                       #when q is of degree 2 and in its domain, output its value. otherwise None.
         if q.Degree()==2 and self.ContainsElementInDomain(q):
-            return self.tree_2.Value(q.Node())
+            return self.tree_2.LevelTwoValue(q.Node())
             
-    def ContainsInDomainStar(self,q):    # does the tree contain q* in its domain?
+    def ContainsInDomainStar(self,q):    # does the tree contain q in its domain*?
         if self.ContainsElementInDomain(q):
             return true
-        if q.Degree == 2 and self.tree_2.ContainsInDomainStar(q.node):
-            return true
+        if q.Degree == 2 :
+            if self.tree_2.ContainsInDomainStar(q.node):
+                return true
         return False
     
     def GetPartialLevelOneTower(self,q):    #outputs the 2Q[q] , the partial level <=1 tower
@@ -1496,6 +1677,19 @@ class Level_leq_2_Tree:
         return self.tree_1 == Q.tree_1 and self.tree_2 == Q.tree_2
     def __ne__(self, Q):
         return not self == Q
+        
+    def Input(self,d):
+		printempty(d)
+		print("Input the level <=2 tree:")
+		printempty(d)
+		print("The level-1 component:")
+		self.tree_1.Input(d+indent)
+		printempty(d)
+		print("The level-2 component:")
+		self.tree_2.Input(d+indent)
+		printempty(d)
+		print("Level <=2 tree input complete!")
+		
     
 class LevelTwoDescription:
     
@@ -1503,8 +1697,8 @@ class LevelTwoDescription:
         #by default, it generates the constant level-2 description:
         #(empty, empty, (0))
         
-        self.node = node
-        self.partial_tower = partial_tower
+        self.node = deepcopy(node)
+        self.partial_tower = deepcopy(partial_tower)
         
     def IsContinuousType(self):
         return self.node.IsContinuousType()
@@ -1515,10 +1709,11 @@ class LevelTwoDescription:
     def IsConstant(self):               # is it the constant level-2 desc?
         return self.node.IsEmpty()
         
-    def AppendMinusOne(self):           # if discontinous type, append the node by -1 and complete the partial tower
-        self.node.append(DoubleMinusOne())
+    def AppendMinusOne(self):           # if discontinous type, append by -1 and complete the partial tower
+        self.node.AppendMinusOne()
         self.partial_tower.AppendCompletion()
-    
+        return self
+        
     def __eq__(self,D):
         return self.node == D.node and self.partial_tower == D.partial_tower 
     def __ne__(self,D):
@@ -1528,30 +1723,37 @@ class LevelTwoDescription:
         return self.node.Length()
     def Node(self):
         return self.node
+        
     def PartialTower(self):
         return self.partial_tower
+    def Tree(self):
+        return self.partial_tower.Tree()
+    def NodeSequence(self):
+        return self.partial_tower.NodeSequence()
+
+    
  #   def LengthOfPartialTower(self):
   #      return self.partial_tower.Length()
     
     def Node_2(self,i):
         return self.node.Entry(i)
     def Node_1(self,i):
-        return self.partial_tower.Node(i)
+        return self.partial_tower.NodeEntry(i)
         
     def Represent(self):            #<q>, to compare the BK orders
         
         r = SingleSequence()
         k = self.LengthOfNode()
-        P = self.partial_tower.LastTree()
+        P = self.partial_tower.Tree()
         
         if self.node.IsContinuousType():
             for i in range (k-1):
-                r . Append (  P.Rank( self.partial_tower.Node(i) ) )
+                r . Append (  P.Rank( self.partial_tower.NodeEntry(i) ) )
                 r . Append ( self.node.Entry(i))
             r.Append(-1)
         else:
             for i in range (k):
-                r . Append (  P.Rank( self.partial_tower.Node(i) ) )
+                r . Append (  P.Rank( self.partial_tower.NodeEntry(i) ) )
                 r . Append ( self.node.Entry(i))
             r.Append(-1)
         return r
@@ -1576,16 +1778,24 @@ class LevelTwoDescription:
             return False
         return True
     
-        
-
 class Level_leq_2_Description:
     'level <=2 description'
     
     def __init__ (self, degree = 2, desc = LevelTwoDescription() ):
         #by default, it generates (2, the constant level-2 desc)
-        self.degree = degree
-        self.desc = desc
-        
+        self.degree = deepcopy(degree)
+        self.desc = deepcopy(desc)
+    
+    def Tree(self):
+        return self.desc.Tree()
+    def Node(self):
+        if degree == 1:
+            return self.desc
+        else:
+            return self.desc.Node()
+    def NodeSequence(self):
+        return self.desc.NodeSequence()
+    
     def IsContinuousType(self):
         if self.degree == 2:
             if self.desc.IsContinuousType():
@@ -1614,6 +1824,8 @@ class Level_leq_2_Description:
     def __lt__(self,D):
         if self.degree < D.degree:
             return True
+        if self.degree > D.degree:
+            return False
         return self.desc < D.desc 
     def __le__(self,D):
         return self < D or self == D
@@ -1626,7 +1838,7 @@ def OplusTwo(q, sigma):         #q oplus sigma, where q is in a level-2 tree
     t = SingleNode()
     k = q.LengthOfNode()
     for i in range(k):
-        t.Append(sigma.Value(q.Node_1(i)))
+        t.Append(sigma.LastValue(q.Node_1(i)))
         t.Append(q.Node_2(i))
     return t
     
@@ -1637,10 +1849,10 @@ class Level_21_Description:
     # (d,q,sigma), where d in {1,2}, q is a Q-desc, sigma factors (P,W)
     #
     
-    def __init__(self):
-        self.degree = 2
-        self.desc = LevelTwoDescription()
-        self.factor = LevelOneFactor()
+    def __init__(self, degree = 2, desc = LevelTwoDescription(), factor = LevelOneFactor()):
+        self.degree = deepcopy(degree)
+        self.desc = deepcopy(desc)
+        self.factor = deepcopy(factor)
     #the default one is constant
     
     
@@ -1655,7 +1867,7 @@ class Level_21_Description:
         if self.factor.IsNonTrivial():
             return False
             
-        return Q.Level_1_Component.ContainsElement(self.desc)
+        return Q.Level_1_Component().ContainsElement(self.desc)
         
     def Is_21_Desc(self, Q,W):  # is it a (Q,W)-desc?
         if not self.Is_2_Desc(Q):
@@ -1671,7 +1883,7 @@ class Level_21_Description:
         t = SingleNode()
         k = self.desc.LengthOfNode()
         for i in range(k):
-            t.Append(self.factor.Value(q.Node_1(i)))
+            t.Append(self.factor.LastValue(q.Node_1(i)))
         return t
     
     def IsContinuousType_1 (self):    # is it level-1 continuous type?
@@ -1688,7 +1900,7 @@ class Level_21_Description:
             return -1
         if d == 2 and self.desc.partial_tower.UniformCofinality() == -1:
             return -1
-        return self.factor.Value( self.desc.partial_tower.UniformCofinality() )
+        return self.factor.LastValue( self.desc.partial_tower.UniformCofinality() )
         
     def Sign_2 (self):      # its level-2 signature
         
@@ -1701,11 +1913,11 @@ class Level_21_Description:
             return s
         
         if q.IsContinuousType():
-            for i in (1, k):
-                s.append(  Level_leq_2_Node(2, q.Node() ))
+            for i in range(1, k):
+                s.append(  Level_leq_2_Node(2, q.Node().DoubleRestrictedTo(i) ))
         else:
-            for i in (1, k+1):
-                s.append(  Level_leq_2_Node(2, q.Node() ))
+            for i in range(1, k+1):
+                s.append(  Level_leq_2_Node(2, q.Node().DoubleRestrictedTo(i) ))
         return s
     
     def IsContinuousType_2 (self,W):  # is it level-2 W continuous type?
@@ -1731,25 +1943,151 @@ class Level_21_Description:
             return Level_leq_2_Node ( 1 , q)
         if q.IsContinuousType():
             if self.IsContinuousType_2 (W):
-                return Level_leq_2_Node(2, LevelTwoDescription ( q.Node().Minus(), q.PartialTower().Decapped()))
+                return Level_leq_2_Description(2, LevelTwoDescription ( q.Node().Minus(), Decapped(q.PartialTower())))  
             else:
-                return Level_leq_2_Node(2, LevelTwoDescription ( q.Node().Minus(), q.PartialTower()))
+                return Level_leq_2_Description(2, LevelTwoDescription ( q.Node().Minus(), q.PartialTower()))
         else:
             if self.IsContinuousType_2 (W):
                 return self
             else:
-                return Level_leq_2_Node(2, LevelTwoDescription ( q.Node(), q.PartialTower().Completed()))
+                return Level_leq_2_Description(2, LevelTwoDescription ( q.Node(), Completed(q.PartialTower())))
                 
     def IsConstant(self):          #is it the constant level-21-desc?
         if self.degree == 2:
              if self.desc.IsConstant():
                 return True
         return False
+    
+    def __eq__(self, D):    
+        if self.degree != D.degree:
+            return False
+        if self.desc != D.desc:
+            return False
+        return self.factor == D.factor
         
-                 
-                 
-         
-P = LevelTwoTree()
-P.Input(0)
+    def __lt__(self,D):
+        if self.degree < D.degree:
+            return True
+        if self.degree > D.degree:
+            return False
+        return OplusTwo( self.desc , self.factor ) < OplusTwo(D.desc,  D.factor) 
+    def __le__(self,D):
+        return self < D or self == D
+    def __ge__(self,D):
+        return not self < D
+    def __gt__(self,D):
+        return not self <= D    
+    
 
+
+def EnumerateLevelOneFactoring (P,W):
+    # outputs a list of all the (P,W)-factoring maps
+    
+    output = []
+    
+    WW =  W.BKEnumerate()         # enumerate the elements of W in BK order
+    PP =  P.BKEnumerate()
+    k = P.Cardinality()
+    
+    record = combinations ( WW, k )     # enumerate all the k-tupes in W
+    
+    for r in record:        #every tuple corresponds to a factor
+        
+        sigma = LevelOneFactor()
+        sigma.CopyIntoDomain (P)
+        for i in range(k):
+            if PP[i].parent.IsEmpty():
+                sigma.MakeValue ( PP[i],  sigma.root.value  + [ r[i] ])
+            else:
+                sigma.MakeValue ( PP[i], sigma.Value( PP[i].parent )   + [ r[i] ] )
+        output.append(sigma)
+        
+    return output
+    
+
+
+def MakeLevel_21_Desc (Q, W):
+    
+    #
+    # input:    Q,      level <=2 tree
+    #           W,      level-1 tree
+    #
+    # output:   an ordered list of the set of (Q, W)-desc 
+    #      
+    
+    output = []         # the output 
+        
+
+
+    #the level-1 compoment:
+    Q1 = Q.Level_1_Component()
+    qq = Q.Level_1_Component().BKEnumerate()
+
+    
+    for q in qq:
+        output.append ( Level_21_Description (1, Level_leq_2_Description(1,q), LevelOneFactor() ) )
+    #they are an initial segment of all the (Q,W)-desc. in the BK order.
+        
+        
+    #the level-2 component:
+    Q2 = Q.Level_2_Component()
+    qq = Q2.EnumerateLevelTwoDomain()
+    
+    def Insert ( l, D):      # insert D into the l, keep its BK order
+        current = 0
+        while (len(l) > current):
+            if l[current] > D:
+                l.insert (current, D)
+                return l
+            current += 1
+        l.append(D)
+        return l
+    
+    for q in qq:
+        
+        PP = Q2.GetPartialLevelOneTower (q)
+        P = PP.Tree()
+        pp = PP.NodeSequence()
+        q_desc = Q2.GetLevelTwoDescription(q)
+        ss = EnumerateLevelOneFactoring(P,W)
+
+        if Q2.LevelTwoLastValue(q).IsDiscontinuousType(): 
+        #if Q2(q) discontinuous type, q extend (-1) is also possible in a desc, they are continous type
+        #add them first
+                
+            PP_plus = Completed(PP)
+            P_plus = PP.Completion()
+            
+            q_plus = deepcopy(q).AppendDoubleMinusOne()
+            q_plus_desc = Q2.GetLevelTwoDescription(q_plus)
+            
+            ss_plus = EnumerateLevelOneFactoring(P_plus,W)
+            
+            
+            for sigma in ss_plus:       #add new desc of continuous type
+                Insert ( output  , Level_21_Description( 2, q_plus_desc, sigma ))
+        
+        #add the discontinuous type desc second        
+        for sigma in ss:       # otherwise, add new desc of discontinuous type
+            Insert(  output   , Level_21_Description( 2, q_desc, sigma ))
+                
+    return output
+            
+        
+         
+
+
+Q = Level_leq_2_Tree()
+Q.Input(0)
+
+W = LevelOneTree()
+
+W.Input(0)
+
+print("Computing.....")
+l = MakeLevel_21_Desc(Q,W)
+
+print("There are"),
+print(len(l)),
+print("descriptions!")
 
