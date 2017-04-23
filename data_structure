@@ -1,21 +1,25 @@
 The classes in the project:
 
-	Node
-          |
-          |
-          |
-      TreeNode --------- FuncNode ------------------------------------------------------- DoubleFuncNode
-	
-	Tree --------- FuncTree --------- LevelOneFactor --------- Level_121_Factor
-	  |		   |
-          |                |
-          |                |------------- LevelTwoTree --------------------------------- LevelTwoFactor--------Level_222_Factor
-      LevelOneTree         |               
-                           |             Level_leq_2_Node
-                           |             Level_leq_2_Tree
-                           |
-                           |
-                           |------------- LevelThreeTree -------------------------------  Level_332_Factor
+
+  Node--------------- TreeNode --------- FuncNode 
+
+			Tree --------- FuncTree --------- LevelOneFactor --------- Level_121_Factor
+			  |		   |
+			  |                |
+			  |                |------------- LevelTwoTree
+		      LevelOneTree         |               
+					   |             Level_leq_2_Node
+					   |             Level_leq_2_Tree
+					   |
+					   |
+					   |------------- LevelTwoFactor--------Level_222_Factor
+					   |
+					   |
+					   |------------- LevelThreeTree 
+					   |
+					   |
+					   |------------  Level_332_Factor
+			   
                            
                            
      PartialLevelOneTree
