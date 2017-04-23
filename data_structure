@@ -1,50 +1,31 @@
 The classes in the project:
 
+	Node
+          |
+          |
+          |
+      TreeNode --------- FuncNode ------------------------------------------------------- DoubleFuncNode
 	
-	
-	
-  (a node in (omega x something)^<omega)	         	(a node in ((omega^<omega) x something)^<omega)
-  	     ↓									↓
-	SingleNode  ------------  LevelOneNode  ----------------------------DoubleNode  
-		      inherit		|	  	   inherit		|	   
-					|					|
-					|inherit				|inherit
-					|					|
-				AttrLevelOneNode ------------------------  AttrDoubleNode
-							inherit
-				
-			(consists of LevelOneNode's)		    (consists of DoubleNode's)
-					↓					↓
-		  		  LevelOneTree		  	 	   DoubleTree
-				 	|					|
-				 	|					|
-				 	|inherit		  		|inherit
-	(An extra element 		|					|
-	 appended to	    →	AttrLevelOneTree	 	   	AttrDoubleTwoTree
-	 every node	}		|					|
-					|					|	
-					|inherit				|inherit
-					|					|
-					|					|
-			      LevelOneFactor,etc. ①		   LevelTwoTree, etc. ②
-						  
+	Tree --------- FuncTree --------- LevelOneFactor --------- Level_121_Factor
+	  |		   |
+          |                |
+          |                |------------- LevelTwoTree --------------------------------- LevelTwoFactor--------Level_222_Factor
+      LevelOneTree         |               
+                           |             Level_leq_2_Node
+                           |             Level_leq_2_Tree
+                           |
+                           |
+                           |------------- LevelThreeTree -------------------------------  Level_332_Factor
+                           
+                           
+     PartialLevelOneTree
+     PartialLevelOneTower
+   
+      LevelTwoDescription
+      Level_leq_2_Description
+      Level_21_Description  ---------------- Level_221_Description
+      
 				  
-			①: 	Level_121_factor  		②:	LevelTwoFactor
-				  					Level_222_Factor
-									LevelThreeTree
-									Level_332_Factor
-				  
-				  
-	PartialLevelOneTree
-	PartialLevelOneTower
-
-	LevelTwoDescription
-
-	Level_leq_2_escription
-
-	Level_21_Description
-
-	Level_221_Description
-
-	Level_322_Description
+                                  
+    Level_322_Description
 
