@@ -1,44 +1,20 @@
 How to list all the (Q,W)-descriptions:
 
-	pointer 1:		enumerate all the nodes in dom*(Q)
-	
-	pointer 2:		enumerate a node in the level-1 tree component of pointer 1, in the order provided by pointer 1 
-	
-	variable 1:		constructing a level-1 tree factoring map, in the order provided by pointer 2
-		
-		if pointer 2 can be assigned a node that keeps the order, proceed. 
-		otherwise, move back
-	
-	variable 2: 	when variable 1 has finished constructing, put it into variable 2, and pointer 2 moves one bit forward
-	
-		the structure of variable 2: 	
-		
-		indexed by a level-1 tree. as soon as variable 1 finishes constructing, add a node in this level-1 tree
-		
-		(create a class Level_21_DescriptionTreeBlock inherited from a LevelOneTreeBlock, and a class Level_21_DescriptionTree)
-		
+variable 1: 	a (Q,W)-description
+variable 2:	the lower bound of (the next entry in W, the next entry in Q)
+output:		a list of all the descriptions
 
+variable 1 initiallized to the constant (Q,W)-description
+variable 2 initiallized to (the minimum of W, -1)
 
-How to list all the (T,Q,W)-descirpions:
-
-	pointer 1:		enumerate all the nodes in dom*(Q)
+while variable 1 is not None:
+	if variable 2 is not None and variable 1 can be extended so that the next entry is >= variable 2:
+		variable 1 is extended by appending variable 2 to the end
+		variable 2 is set to the successor of the smallest available single-step extension (if exists, None otherwise)
+		loop
+	otherwise:
+		add variable 1 to the end of output
+		variable 2 is set to the successor of the last entry of variable 1 (if exists, None otherwise)
+		variable 1 shortened by 1
+		loop
 	
-	pointer 2:		enumerate a node in the level-1 tree component of pointer 1, in the order provided by pointer 1 
-
-	variable 1: 	constructing a level-(1,2,1) tree factoring map, in the order provided by pointer 2
-	
-		if pointer 2 can be assigned a node that keeps the (2,1)-description level-1-order, proceed. 
-				recursive: 	need to enumerate all the (new) (2,1)-descriptions
-				
-		otherwise, move back
-		
-	variable 2: 	when variable 1 has finished constructing, put it into variable 2, and pointer 2 moves one bit forward
-
-		the structure of variable 2:
-		
-		(level-1 component, level-2 component)
-		indexed by a level-1 tree and a level-2 tree
-		
-		(create a class Level_221_DescriptionTreeBlock inherited from a LevelOneTreeBlock, and a class Level_221_DescriptionTree)
-
-		
