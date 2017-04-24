@@ -9,7 +9,7 @@ bound initiallized to (the minimum of W, -1)
 
 while current is not None:
 	if bound is not None:
-		current is extended by appending bound to the end
+		current is set to bound
 		bound is set to the successor of the smallest available single-step extension (if exists, None otherwise)
 		loop
 	otherwise:
@@ -17,4 +17,30 @@ while current is not None:
 		bound is set to the successor of the last entry of current (if exists, None otherwise)
 		current shortened by 1, (if possible, None if current has length 0)
 		loop
+	
+	
+==================================================================
+How to list all the (T,Q)-descriptions:
+
+X:		a level-2 tree
+psi:		a map factoring (X,T,Q)
+depth:		how far are we in
+marker:		if we have added anything new at prev level
+
+X initialized to a level <=2 tree isomorphis to (T,Q1）-descriptions: X1 to nonconstant desc, X2 is trivial, to the constant desc
+psi initiallized to the canonical map factoring (X,T,Q)
+depth initialized to 0
+marker initialized to True
+
+while marker is True:
+	marker set to False
+	for x in X2 whose length is "depth":
+		Function: "Add all the possible extensions of (X,psi,T,Q) at x"
+		if something is added, marker set to True
+	
+-----------------------------------------------------------------	
+
+Subfunction: How to add all the possible extensions of (X,psi, T, Q) at x
+
+
 	
