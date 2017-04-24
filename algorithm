@@ -1,20 +1,20 @@
 How to list all the (Q,W)-descriptions:
 
-variable 1: 	a (Q,W)-description
-variable 2:	the lower bound of (the next entry in W, the next entry in Q)
+current: 	a (Q,W)-description
+bound:		the lower bound of the next length-1 extension of current
 output:		a list of all the descriptions
 
-variable 1 initiallized to the constant (Q,W)-description
-variable 2 initiallized to (the minimum of W, -1)
+current initiallized to the constant (Q,W)-description
+bound initiallized to (the minimum of W, -1)
 
-while variable 1 is not None:
-	if variable 2 is not None and variable 1 can be extended so that the next entry is >= variable 2:
-		variable 1 is extended by appending variable 2 to the end
-		variable 2 is set to the successor of the smallest available single-step extension (if exists, None otherwise)
+while current is not None:
+	if bound is not None:
+		current is extended by appending bound to the end
+		bound is set to the successor of the smallest available single-step extension (if exists, None otherwise)
 		loop
 	otherwise:
-		add variable 1 to the end of output
-		variable 2 is set to the successor of the last entry of variable 1 (if exists, None otherwise)
-		variable 1 shortened by 1
+		add current to the end of output
+		bound is set to the successor of the last entry of current (if exists, None otherwise)
+		current shortened by 1, (if possible, None if current has length 0)
 		loop
 	
