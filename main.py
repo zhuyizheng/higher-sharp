@@ -697,6 +697,47 @@ class LevelOneTree (Tree):
         super(LevelOneTree, self).__init__()
         self.cardinality = 0        #the root is not in the level-1 tree
         
+        
+
+    def MakeCopy(self):    #make a copy of myself
+
+        Q = LevelOneTree()
+        
+        Q.cardinality = self.cardinality 
+        
+        record = [[self.root,  Q.root]]
+        
+        for e in self.Enumerate():
+            new = TreeNode(e.entry)
+            record.append([e, new])
+        for [q1, s1] in record:
+            for [q2, s2] in record:
+                if q1.parent is not None:
+                    if q1.parent == q2:
+                        s1.parent = s2
+                if q1.left is not None:
+                    if q1.left == q2:
+                        s1.left = s2
+                if q1.right is not None:
+                    if q1.right == q2:
+                        s1.right = s2
+                if q1.BKright is not None:
+                    if q1.BKright == q2:
+                        s1.BKright = s2
+                if q1.BKleft is not None:
+                    if q1.BKleft == q2:
+                        s1.BKleft = s2
+                if q1.first_child is not None:
+                    if q1.first_child == q2:
+                        s1.first_child = s2
+                if q1.last_child is not None:
+                    if q1.last_child == q2:
+                        s1.last_child = s2
+        for [q, s] in record:
+            s.number_of_children = deepcopy(q.number_of_children)
+
+        return Q
+
     def IsRegular(self):
         return self.root.number_of_children <= 1
         
@@ -783,9 +824,15 @@ class PartialLevelOneTree(object):
         if tree is None:
             tree = LevelOneTree()
             node = TreeNode ([0])
-        self.tree = deepcopy(tree)
-        self.node = deepcopy(node)
-        
+        self.tree = tree.MakeCopy()
+        self.node = TreeNode(node.entry)
+    
+    def MakeCopy(self):
+        out = PartialLevelOneTree()
+        out.tree = self.tree.MakeCopy()
+        out.node = TreeNode(self.node.entry)
+        return out
+    
     def IsPartialLevelOneTree(self):        # is it a partial level-1 tree?
         if self.node.Length() <=1:
             if self.tree.IsTrivial() and self.node.entry == [0]:
@@ -816,7 +863,7 @@ class PartialLevelOneTree(object):
         if self.Degree()==0:
             print("This partial level <=1 tree is of degree 0, no completion!")
             return None
-        P = deepcopy(self.tree)
+        P = self.tree.MakeCopy()
         p = deepcopy(self.node)
         P.AddNodeBelowNextLevel (p.Minus())
         return P
@@ -947,6 +994,8 @@ class FuncTree(Tree):
 
         return
     
+    
+
     def EnumerateDomain(self):
         for a in self.Enumerate():
             yield a
@@ -1096,6 +1145,83 @@ class LevelTwoTree(FuncTree):
         self.cardinality = 1
         self.root.immediate_extensions = LevelOneTree()
         
+    
+    def String(self,d):
+        
+        ee = self.root
+        
+        out = ""
+        
+        while True:
+            
+            if ee.HasChild():
+                out += stringempty(d)+ ee.String() + " has " + str(ee.number_of_children) + " children in the domain. They form a level-1 tree.\n"
+                out += stringempty(d) + "The values at these children are partial level <=1 trees.  Their node components are:\n"
+                for ii in ee.immediate_extensions.Enumerate():
+                    out += stringempty(d + indent) + ii.String() + " |--> " + ee.MyChild(ii).value.Node().String() + "\n"
+                
+                ee = ee.first_child
+                
+            else:
+                
+                while ee is not None:
+                    if ee.IsLastBitRightMost():
+                        ee = ee.parent
+                    else:
+                        break
+                
+                if ee is None:
+                    return out 
+                ee = ee.right 
+    
+    def Output(self,d):
+        print(self.String(d))
+
+
+    def MakeCopy(self):    
+
+        Q = LevelTwoTree()
+        
+        Q.cardinality = self.cardinality 
+        
+        record = [[self.root,  Q.root]]
+        
+        for e in self.Enumerate():
+            new = FuncNode()
+            new.entry = deepcopy(e.entry)
+            new.value = e.value.MakeCopy()
+            
+            record.append([e, new])
+        for [q1, s1] in record:
+            for [q2, s2] in record:
+                if q1.parent is not None:
+                    if q1.parent == q2:
+                        s1.parent = s2
+                if q1.left is not None:
+                    if q1.left == q2:
+                        s1.left = s2
+                if q1.right is not None:
+                    if q1.right == q2:
+                        s1.right = s2
+                if q1.BKright is not None:
+                    if q1.BKright == q2:
+                        s1.BKright = s2
+                if q1.BKleft is not None:
+                    if q1.BKleft == q2:
+                        s1.BKleft = s2
+                if q1.first_child is not None:
+                    if q1.first_child == q2:
+                        s1.first_child = s2
+                if q1.last_child is not None:
+                    if q1.last_child == q2:
+                        s1.last_child = s2
+        for [q, s] in record:
+            s.number_of_children = deepcopy(q.number_of_children)
+            s.immediate_extensions = q.immediate_extensions.MakeCopy()
+
+        return Q
+    
+    
     def Value(self, s):
         if s.IsNonEmpty():
             return super(LevelTwoTree,self).Value(s)
@@ -1178,7 +1304,9 @@ class PartialLevelOneTower:
         if tree_sequence is None:
             tree_sequence = [LevelOneTree()]
             node_sequence = [TreeNode([0])]
-        self.tree_sequence = deepcopy(tree_sequence)
+        self.tree_sequence = []
+        for e in tree_sequence:
+            self.tree_sequence.append(e.MakeCopy())
         self.node_sequence = deepcopy(node_sequence)
     
     def IsTrivial(self):
@@ -1292,9 +1420,44 @@ class LevelOneFactor (FuncTree):
         return True
     
     def Domain(self):   # the domain of self
-        P = deepcopy(self)
-        P.cardinality -= 1
-        return P
+        
+        Q = LevelOneTree()
+        
+        Q.cardinality = self.cardinality - 1
+        
+        record = [[self.root,  Q.root]]
+        
+        for e in self.Enumerate():
+            new = TreeNode(e.entry)
+            record.append([e, new])
+        for [q1, s1] in record:
+            for [q2, s2] in record:
+                if q1.parent is not None:
+                    if q1.parent == q2:
+                        s1.parent = s2
+                if q1.left is not None:
+                    if q1.left == q2:
+                        s1.left = s2
+                if q1.right is not None:
+                    if q1.right == q2:
+                        s1.right = s2
+                if q1.BKright is not None:
+                    if q1.BKright == q2:
+                        s1.BKright = s2
+                if q1.BKleft is not None:
+                    if q1.BKleft == q2:
+                        s1.BKleft = s2
+                if q1.first_child is not None:
+                    if q1.first_child == q2:
+                        s1.first_child = s2
+                if q1.last_child is not None:
+                    if q1.last_child == q2:
+                        s1.last_child = s2
+        for [q, s] in record:
+            s.number_of_children = deepcopy(q.number_of_children)
+
+        return Q
+
         
     def IsFactorInto(self, W):      # is it a level-1 factoring map into W?
         if self.IsTrivial():
@@ -1369,8 +1532,8 @@ class Level_leq_2_Tree (object):
         if tree_1 is None:
             tree_1 = LevelOneTree()
             tree_2 = LevelTwoTree()
-        self.tree_1 = deepcopy(tree_1)
-        self.tree_2 = deepcopy(tree_2)
+        self.tree_1 = tree_1.MakeCopy()
+        self.tree_2 = tree_2.MakeCopy()
     
     def Level_1_Component (self):
         return self.tree_1
@@ -1883,7 +2046,7 @@ def NextNonConstLevel_21_Desc (D, Q, W):
             # assign it to the minimum of W
         else:
             #the hanging node is not BK leftmost
-            w_last = sigma.Value(p_last_minus.BKleft).BKright
+            w_last = W.MyNode(sigma.Value(p_last_minus.BKleft)).BKright
             # assign it to the BK successor of the sigma value of the predecessor
         if w_last == w_last_minus:
             return None
@@ -2487,7 +2650,9 @@ def Level_21_1_Extension (D, Ww):
     else:
         sigma_extension = deepcopy(sigma)
         sigma_extension.MakeValue(p, w)
-        D_extension = Level_21_Description ( 2, qq, sigma_extension)
+        qq_extension = deepcopy(qq.Minus())
+        qq_extension.AppendMinusOne()
+        D_extension = Level_21_Description ( 2, qq_extension, sigma_extension)
         
     return D_extension
         
@@ -3153,7 +3318,9 @@ def TensorProduct_22( T,Q):
         else:
             current_node = current_node.first_child
  
-    X = Level_leq_2_Tree(X1,X2)
+    X = Level_leq_2_Tree()
+    X.tree_1 = X1
+    X.tree_2 = X2
     
     psi = Level_222_Factor(X, psi1, psi2)
     return psi
@@ -3204,17 +3371,35 @@ psi = TensorProduct_22(T,Q)
 print("number of (T,Q,*)-desc")
 X = psi.domain
 print(X.Cardinality())
-W = LevelOneTree()
-print("input W:")
+
+
+print("T \otimes Q:")
+X.tree_2.Output(1)
+
+
+
+W = Level_leq_2_Tree()
+print("input U:")
 W.Input(0)
 
-xw = TensorProduct_21(X, W)
-print("Number of (TQ, W)-desc:")
-print(xw.cardinality)
-qw = TensorProduct_21(Q, W)
-qw_tree = qw.Domain()
-print("Number of (Q,W)-desc:")
-print(qw.cardinality)
-tqw = TensorProduct_21(T, qw_tree)
-print("Number of (T,QW)-desc:")
-print(tqw.cardinality)
+qw = TensorProduct_22(Q, W)
+qw_tree = qw.domain
+print("Number of (Q,U)-desc:")
+print(qw_tree.Cardinality())
+tqw = TensorProduct_22(T, qw_tree)
+
+
+output = tqw.domain.tree_2.String(1)
+
+
+
+fo = open("level_222.txt", "wb")
+
+fo.write( output);
+
+fo.close()
+
+
+
+print("Number of (T,Q \otimes U)-desc:")
+print(tqw.domain.Cardinality())
