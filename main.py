@@ -7,6 +7,12 @@ indent  = 2
 def printempty(d):
     for i in range(d):
         print(' '),
+        
+def stringempty(d):
+    s = ""
+    for i in range(d):
+        s += " "
+    return s
 
 def MinusOne():
     return Node([-1])
@@ -21,10 +27,37 @@ class Node(object):
 
 
     def Enumerate (self):       # Enumerate the entry of the node
-        s = []
         for a in self.entry:
-                s.append(a)
-        return s
+            yield a
+    
+    def IsInitialSegment(self, s):    # self is an initial segment of s
+        
+        if not isinstance(s, Node):
+            return False
+        if len(self.entry) > len(s.entry):
+            return False
+        for i in range(len(self.entry)):
+            if not isinstance(self.entry[i], type(s.entry[i])):
+                if not isinstance(s.entry[i], type(self.entry[i])):
+                    return False
+            if self.entry[i] != s.entry[i]:
+                return False
+        return True       
+        
+    def IsProperInitialSegment(self, s):    #self is a proper initial segment of s
+  
+        if not isinstance(s, Node):
+            return False
+        if len(self.entry) >= len(s.entry):
+            return False
+        for i in range(len(self.entry)):
+            if not isinstance(self.entry[i], type(s.entry[i])):
+                if not isinstance(s.entry[i], type(self.entry[i])):
+                    return False
+            if self.entry[i] != s.entry[i]:
+                return False
+        return True             
+        
         
     def String(self):     #output the entry when it is a single node
         if self.IsMinusOne():
@@ -339,15 +372,11 @@ class TreeNode(Node):
             
             if P.IsTrivial():
                 return None
-            
-            new = self.AddChildBelow(TreeNode())
-                    
-            t = P.Enumerate()
-            
-            for i in range (1,P.cardinality):
-                self.AddChildBelow ( t[i].Minus() )
+
+            for a in P.Enumerate():
+                self.AddChildBelow ( a.Minus() )
                 
-            return new
+            return self.first_child
         
         else:       #single tree
             k = P
@@ -382,10 +411,8 @@ class Tree(object):
         return current
     
     def IsSubtree (self, T):        #is self a subtree of T?
-        
-        e = self.Enumerate()
-        
-        for s in e:
+                
+        for s in self.Enumerate():
             if not T.ContainsElement(s):
                 return False
         return True
@@ -575,48 +602,35 @@ class Tree(object):
   
     def BKEnumerate(self):      #enumerate the nodes in the BK order
         
-        if self.IsTrivial():
-            return [self.root]
-        
-        t = []
-            
         current = self.SmallestNode()
         
         while current is not None:
-            t.append(current)
+            yield current
             current = current.BKright
             
-        return t
         
     def Enumerate(self):   #enumerate the nodes in the dictionary order, NOT IN THE BK ORDER!
         
-        t = [self.root]
+        yield self.root
         
         if self.IsTrivial():
-            return t
+            return
             
         current = self.root.first_child
         
-        while current != self.root:
+        while current.IsNonEmpty():
             
-            t .append(current)
+            yield current
             
             if current.HasChild():
-                
                 current = current.first_child
                 
             else:
-                
                 while current.IsNonEmpty() and current.IsLastBitRightMost():
-                    
                     current = current.parent
-                
                 if current.IsEmpty():
-                    
-                    return t
-                    
+                    return
                 else:
-                    
                     current = current.right
 
     def Rank(self, s):            # the BK-rank of s in the tree 
@@ -692,16 +706,37 @@ class LevelOneTree (Tree):
     def ContainsElement(self,s):
         return s.IsNonEmpty() and super(LevelOneTree,self).ContainsElement(s)
     def Enumerate(self):
-        t = super(LevelOneTree, self).Enumerate()
-        t.pop(0) 
-        return t 
+        
+        if self.IsTrivial():
+            return
+            
+        current = self.root.first_child
+        
+        while current.IsNonEmpty():
+            
+            yield current
+            
+            if current.HasChild():
+                current = current.first_child
+                
+            else:
+                while current.IsNonEmpty() and current.IsLastBitRightMost():
+                    current = current.parent
+                if current.IsEmpty():
+                    return
+                else:
+                    current = current.right
+                    
     def BKEnumerate(self):
-        t = super(LevelOneTree, self).BKEnumerate()
-        t.pop() 
-        return t    
+        
+        current = self.SmallestNode()
+        
+        while current.IsNonEmpty():
+            yield current
+            current = current.BKright
+            
 
     def Input(self, d):      #input the tree on the screen
-        #gangyfan
         self.cardinality = 0
         
         current = self.root
@@ -875,13 +910,11 @@ class FuncTree(Tree):
     
     def CopyIntoDomain(self, Q):    #starting from empty map, copy the tree Q into its domain
 
-        e = Q.Enumerate()
-        
         self.cardinality = Q.cardinality 
         
         record = [[Q.root,  self.root]]
         
-        for q in e:
+        for q in Q.Enumerate():
             new = FuncNode()
             new.entry = q.entry
             record.append([q, new])
@@ -915,11 +948,14 @@ class FuncTree(Tree):
         return
     
     def EnumerateDomain(self):
-        return self.Enumerate()
+        for a in self.Enumerate():
+            yield a
+        return
     def BKEnumerateDomain(self):
-        return self.BKEnumerate()
-       
-            
+        for a in self.BKEnumerate():
+            yield a
+        return
+        
     def EnumerateWithValue(self):       #never used??
         
         e = self.EnumerateDomain()
@@ -1032,7 +1068,7 @@ def MakePartialLevelOneTree (P):            ## makes a list of partial level-1 t
         
         for ee in P.Enumerate():
             
-            t.append( PartialLevelOneTree( P, TreeNode( ee.Enumerate() + [ee.number_of_children] )  ) )
+            t.append( PartialLevelOneTree( P, TreeNode( ee.entry + [ee.number_of_children] )  ) )
         
         return t
 
@@ -1076,31 +1112,33 @@ class LevelTwoTree(FuncTree):
                 
         e = self.EnumerateDomain()
         
-        for ee in e[1:]:
+        for ee in self.EnumerateDomain():
             
-            partial = self.Value(ee.Minus())
-            completion = partial.Completion()
-            partial_extend = MakePartialLevelOneTree(completion)
-            partial_extend_node = EnumerateNodesOfPartialLevelOneTree(completion)
-            
-            printempty(d)
-            print "Possible values of the node component of this level-2 tree at", 
-            ee.Output() 
-            print ":"
-            
+            if ee.IsNonEmpty():
+                
+                partial = self.Value(ee.Minus())
+                completion = partial.Completion()
+                partial_extend = MakePartialLevelOneTree(completion)
+                partial_extend_node = EnumerateNodesOfPartialLevelOneTree(completion)
+                
+                printempty(d)
+                print "Possible values of the node component of this level-2 tree at", 
+                ee.Output() 
+                print ":"
+                
 
-            for i in range(len(partial_extend_node)):
-                printempty(d+indent)
-                print i+1, ". ", 
-                partial_extend_node[i].Output()
-                print " "
-            printempty(d)
-            k = input("which one?  ")
-            
-            self.MakeValue(ee,   partial_extend[k-1] )
-            
-            printempty(d)
-            print("Level-2 tree input complete!")
+                for i in range(len(partial_extend_node)):
+                    printempty(d+indent)
+                    print i+1, ". ", 
+                    partial_extend_node[i].Output()
+                    print " "
+                printempty(d)
+                k = input("which one?  ")
+                
+                self.MakeValue(ee, partial_extend[k-1] )
+                
+                printempty(d)
+                print("Level-2 tree input complete!")
 
         
     def ContainsInDomainStar(self,s):       #does dom^*(self) contain the double node s?
@@ -1253,6 +1291,11 @@ class LevelOneFactor (FuncTree):
             current = current.BKright
         return True
     
+    def Domain(self):   # the domain of self
+        P = deepcopy(self)
+        P.cardinality -= 1
+        return P
+        
     def IsFactorInto(self, W):      # is it a level-1 factoring map into W?
         if self.IsTrivial():
             return True
@@ -1303,15 +1346,22 @@ class Level_leq_2_Node (object):
         return not self < q
     def __gt__(self,q):
         return not self <= q
-        
-    def Output(self):
+    
+    def String(self):
+        s = ""
+
         if self.degree == 1:
-            print ("(1,"),
-            self.node.Output()
+            s += "(1,"
+            s += self.node.String()
         else: 
-            print ("(2,"),
-            self.node.Output()            
-        print (")")
+            s += "(2,"
+            s += self.node.String()
+        s += ")"
+        return s
+        
+    
+    def Output(self):
+        print (self.String())
         
 class Level_leq_2_Tree (object):
     
@@ -1329,14 +1379,10 @@ class Level_leq_2_Tree (object):
         return self.tree_2
     
     def EnumerateDomain (self):
-        e1 = self.tree_1.Enumerate()
-        e2 = self.tree_2.EnumerateDomain()
-        f = []
-        for q in e1:
-            f.append ( Level_leq_2_Node(1,q) )
-        for q in e2:
-            f.append ( Level_leq_2_Node(2,q) )
-        return
+        for q in self.tree_1.Enumerate():
+            yield Level_leq_2_Node(1,q)
+        for q in self.tree_2.EnumerateDomain():
+            yield Level_leq_2_Node(2,q)
         
     def Cardinality(self):
         return self.tree_1.Cardinality() + self.tree_2.Cardinality()
@@ -1552,6 +1598,7 @@ class Level_21_Description (object):
     'level-(2,1)-description'
     #
     # (d,q,sigma), where d in {1,2}, q is a Q-desc, sigma factors (P,W)
+    #               if d=1, sigma is None
     #
     
     def __init__(self, degree = None, desc = None, factor = None):
@@ -1563,28 +1610,39 @@ class Level_21_Description (object):
         self.desc = deepcopy(desc)
         self.factor = deepcopy(factor)
     #the default one is constant
-
-    def Output(self,d):
-        printempty(d)
-        print("degree:"),
-        print(self.degree)
-        printempty(d)
-        print("node:"),
+    
+    def Node(self):
         if self.degree == 1:
-            self.desc.Node().Output()
+            return self.desc
         else:
-            self.desc.Node().Output()
-        print(' ')
+            return self.desc.Node()
+    
+    def String(self,d):
+
+        s = stringempty(d)
+        s += "degree: "
+        s += str(self.degree)
+        s += "\n"
+        s += stringempty(d)
+        s += "node: "
+        if self.degree == 1:
+            s += self.desc.String()
+        else:
+            s += self.desc.Node().String()
+        s += "\n"
         if self.degree ==2:
-            printempty(d)
-            print("factor map:")
-            e = self.desc.Tree().Enumerate()
-            for p in e:
-                printempty(d+indent)
-                p.Output()
-                print("|-->"),
-                self.factor.Value(p).Output()
-                print(" ")
+            s += stringempty(d)
+            s += "factor map:\n"
+            for p in self.desc.Tree().Enumerate():
+                s += stringempty(d+indent)
+                s += p.String()
+                s += "|-->"
+                s += self.factor.Value(p).String()
+                s += "\n"
+        return s
+        
+    def Output(self,d):
+        print(self.String())
 
     def OutputProperties(self,d):
         printempty(d)
@@ -1614,17 +1672,19 @@ class Level_21_Description (object):
             q.Output()
             
     def IsLevel_21_Desc (self):       # is it a level-(2,1)-desc
-        return self.factor.IsFactor()
-        
+        if self.degree == 2:
+            return self.factor.IsFactor()
+        else:
+            return True
+            
     def IsLevel_21_Desc_2(self, Q):     # is it a Q-desc? 
         
-        if not self.factor.IsFactor():
-            return False
-            
         if self.degree == 2:
+            if not self.factor.IsFactor():
+                return False
             return self.desc.IsLevelTwoDescription(Q.Level_2_Component())
         
-        if self.factor.IsNonTrivial():
+        if self.factor is not None:
             return False
             
         return Q.Level_1_Component().ContainsElement(self.desc)
@@ -1632,6 +1692,8 @@ class Level_21_Description (object):
     def IsLevel_21_Desc_21(self, Q,W):  # is it a (Q,W)-desc?
         if not self.IsLevel_21_Desc_2(Q):
             return False
+        if self.degree == 1:
+            return True
         return self.factor.IsFactorInto(W)
         
     def Degree(self):           # its degree
@@ -1726,8 +1788,10 @@ class Level_21_Description (object):
             return False
         if self.desc != D.desc:
             return False
-        return self.factor == D.factor
-    
+        if self.degree == 2:
+            return self.factor == D.factor
+        return True
+        
     def __ne__(self, D):
         return not self == D
     
@@ -1736,6 +1800,8 @@ class Level_21_Description (object):
             return True
         if self.degree > D.degree:
             return False
+        if self.degree == 1:
+            return self.desc < D.desc
         return OplusTwo( self.desc , self.factor ) < OplusTwo(D.desc,  D.factor) 
     def __le__(self,D):
         return self < D or self == D
@@ -1748,76 +1814,43 @@ class Level_21_Description (object):
         if self.degree == 2:
             return self.desc.LevelOneNodeComponent(k)
     
-    def Length(self):
+    def LengthFormal(self):
         if self.degree == 1:
             return 0
         else:
             return self.desc.Length()
             
-    def RestrictedTo(self,i):    
+    def RestrictedToFormal(self,i):
         if self.degree == 1:
             return self
         return Level_21_Description(2, self.desc.RestrictedTo(i), self.factor.RestrictedTo(self.desc.TreeEntry(i)))
         
     def IsProperInitialSegment (self,D):
-        if self.Length() < D.Length():
-            if self == D.RestrictedTo(self.Length()):
+        if self.LengthFormal() < D.LengthFormal():
+            if self == D.RestrictedTo(self.LengthFormal()):
                 return True
         return False
         
-    def Minus(self):
-        return self.RestrictedTo (self.Length()-1)
+    def MinusFormal(self):
+        return self.RestrictedToFormal (self.LengthFormal()-1)
         
     def IsProperInitialSegmentWithTrees (self,D,Q,W):
     # is self a proper initial segment of D, both are (Q,W)-desc?
         return self.IsProperInitialSegment(D) and D.IsLevel_21_Desc_21(Q,W)
-    
-def EnumerateLevelOneFactoring (P,W):
-    # outputs a list of all the (P,W)-factoring maps
-    
-    output = []
-    
-    WW =  W.BKEnumerate()         # enumerate the elements of W in BK order
-    PP =  P.BKEnumerate()
-    k = P.Cardinality()
-    
-    record = combinations ( WW, k )     # enumerate all the k-tupes in W
-    
-    for r in record:        #every tuple corresponds to a factor
-        
-        sigma = LevelOneFactor()
-        sigma.CopyIntoDomain (P)
-        for i in range(k):
-            sigma.MakeValue ( PP[i],  r[i])
-        output.append(sigma)
-        
-    return output
-    
 
-
-def MakeLevel_21_Desc (Q, W):
+def NextNonConstLevel_21_Desc (D, Q, W):
     
     #
-    # input:    Q,      level <=2 tree
+    # input:    D,      a nonconstant(Q,W)-desc or None
+    #           Q,      level <=2 tree
     #           W,      level-1 tree
     #
-    # output:   an ordered list of the set of (Q, W)-desc 
+    # output:   the smallest (Q,W)-desc nonconstant, if D is None
+    #           the next (Q,W)-desc after D, if nonconstant
+    #           None, if the next (Q,W)-desc is constant
     #      
-    
-    output = []         # the output 
-        
 
 
-    #the level-1 compoment:
-    qq = Q.Level_1_Component().BKEnumerate()
-
-    
-    for q in qq:
-        output.append ( Level_21_Description (1, Level_leq_2_Description(1,q), LevelOneFactor() ) )
-    #they are an initial segment of all the (Q,W)-desc. in the BK order.
-        
-        
-    #the level-2 component:
     def NextLevelSmallest(D, Q, W):     
         # the smallest 1-step extension of D , if possible
         # None, otherwise
@@ -1892,7 +1925,7 @@ def MakeLevel_21_Desc (Q, W):
 
             else:
                 p_last_minus = P.root
-                W_last_minus = W.root
+                w_last_minus = W.root
 
             if not Q2.MyNode(q.Minus()).IsTerminal():
                 # there is a node in Q at the same level, then it is the smallest
@@ -1950,28 +1983,79 @@ def MakeLevel_21_Desc (Q, W):
                 D_next = Level_21_Description ( 2, qq_next, sigma_next )
                 return D_next               
     
-    current = Level_21_Description()
-    # current is the constant desc
     
-    bound = NextLevelSmallest(current, Q, W)
-    # the lower bound is the smallest (Q,W)-desc
+    Q1 = Q.Level_1_Component() 
+    Q2 = Q.Level_2_Component()
     
-    while current is not None:
-        if bound is not None:
-            current = bound
-            bound = NextLevelSmallest(current, Q, W)
-        else:
-            output.append(current)
-            current.Output(1)
-            bound = SameLevelSmallest(current, Q, W)
-            if current.Length() == 0:
-                current = None
+    if D is None:
+        if Q1.IsTrivial():
+            if W.IsNonTrivial():
+                return NextLevelSmallest(Level_21_Description(), Q, W)
+                # if W is nontrivial, the next is (w,-1), where w is the smallest in W
             else:
-                current = current.Minus()
-                
-    return output
+                return None
+                # if W is trivial, the next is the constant desc
+                # so return None
+        #now assume that q_next is nonempty
+        return Level_21_Description( 1, Q1.SmallestNode(), None)
             
-        
+
+    
+    if D.Degree() == 1:
+    # D is degree 1, i.e. a node in Q1
+        q = D.desc
+        q_next = Q1.MyNode(q).BKright
+        if q_next.IsEmpty():
+            if W.IsNonTrivial():
+                return NextLevelSmallest(Level_21_Description(), Q, W)
+                # if W is nontrivial, the next is (w,-1), where w is the smallest in W
+            else:
+                return None
+                # if W is trivial, the next is the constant desc
+                # so return None
+        #now assume that q_next is nonempty
+        return Level_21_Description( 1, q_next, None)
+            
+            
+    #now assume that D is of degree 2
+    
+    
+    bound = SameLevelSmallest(D, Q, W)
+    # try to move the last bit right
+    
+    if bound is None:
+        #if this level is rightmost already
+        #move back up one level
+        if D.MinusFormal().IsConstant():
+            return None
+            # if back to the constant, return None
+        else:
+            return D.MinusFormal()
+            # otherwise, return the 1-level shortening
+    else:
+        # otherwise, move along bound on the leftmost path
+        while bound is not None:            
+            current = bound 
+            bound = NextLevelSmallest(current, Q, W)
+        return current    
+
+def EnumerateNonConstLevel_21_Desc (Q,W):
+    D = None
+    while True:
+        D = NextNonConstLevel_21_Desc (D, Q, W)
+        if D is not None:
+            yield D
+        else:
+            return
+
+def TensorProduct_21 ( Q, W):
+    # returns psi factoring (S,Q,W), S is a representation of Q \otimes W
+    psi = Level_121_Factor()
+    D = None
+    for D in EnumerateNonConstLevel_21_Desc(Q,W):
+        psi.AddNodeBelowWithValueNextLevel( psi.root, D)
+    return psi
+    
 def IsLevelOneNoGapExtension (w,W,w_prime):  # is w triangle_1^W w'?
     if W.ContainsElement(w) and w_prime < w and (not W.ContainsElement(w_prime)):
         if w == W.SmallestNode():
@@ -1979,7 +2063,6 @@ def IsLevelOneNoGapExtension (w,W,w_prime):  # is w triangle_1^W w'?
         if w.BKleft < w_prime:
             return True
     return False
-
 
 def IsLevel_21_NoGapExtension_1 (D, Q, W, D_prime): # is D triangle_1^{Q,W} D'?
     if D.IsLevel_21_Desc_21(Q,W) and D_prime < D and D_prime.IsLevel_21_Desc_2(Q) and (not D_prime.IsLevel_21_Desc_21(Q,W)):
@@ -2109,30 +2192,49 @@ class Level_221_Description (Level_21_Description):
             factor = Level_121_Factor()
         super(Level_221_Description, self).__init__(degree, desc, factor)
         #by default, the value of empty is the trivial level-121-factor
+    
+
+            
+    def RestrictedToFormal(self,i):
+        if self.degree == 1:
+            return self
+        return Level_221_Description(2, self.desc.RestrictedTo(i), self.factor.RestrictedTo(self.desc.TreeEntry(i)))
         
+
+
+    def String(self,d):
+        s = stringempty(d)
+        s += "degree:"
+        s += str(self.degree)
+        s += "\n"
+        s += stringempty(d)
+        s += "node:"
+        if self.degree == 1:
+            s += self.desc.String()
+        else:
+            s += self.desc.Node().String()
+        s += "\n"
+        if self.degree ==2:
+            s += stringempty(d)
+            s += "factor map:\n"
+            for p in self.desc.Tree().Enumerate():
+                s += stringempty(d+indent)
+                s += p.String()
+                s += "|-->"
+                s += "the follofing level-(2,1) description:\n"
+                s += self.factor.Value(p).String(d+indent+indent)
+                s += "\n"
+        return s
+    
     
     def Output(self,d):
-        printempty(d)
-        print("degree:"),
-        print(self.degree)
-        printempty(d)
-        print("node:"),
-        if self.degree == 1:
-            self.desc.Node().Output()
-        else:
-            self.desc.Node().Output()
-        print(' ')
-        if self.degree ==2:
-            printempty(d)
-            print("factor map:")
-            e = self.desc.Tree().Enumerate()
-            for p in e:
-                printempty(d+indent)
-                p.Output()
-                print("|-->"),
-                print("the follofing level-(2,1) description:")
-                self.factor.Value(p).Output(d+indent+indent)
-                print(" ")
+        print(self.String(d))
+    
+    def BaseUCF (self):
+        s_ucf = self.desc.PartialTower().UniformCofinality()
+        if s_ucf == MinusOne():
+            return MinusOne()
+        return self.factor.Value(s_ucf).UCF()
     
     def BaseTower (self):
         #
@@ -2361,6 +2463,574 @@ class Level_221_Description (Level_21_Description):
                 return True
         return False
  
+
+def Level_21_1_Extension (D, Ww):
+    #
+    # given D, a (*,W)-desc, whose ucf is w^-, where Ww = (W,w) is a partial tree
+    # outputs D', the least such that D is 1-initial segment of D'
+    #
+    
+    W = Ww.tree
+    w = Ww.node
+
+    qq = D.desc 
+    sigma = D.factor
+    pp = qq.NodeSequence()
+    p = pp[-1]
+    
+    if D.IsDiscontinuousType():
+        sigma_extension = deepcopy(sigma)
+        sigma_extension.AddNodeBelowWithValueNextLevel(p.Minus(), w)
+        qq_extension = deepcopy(qq)
+        qq_extension.AppendMinusOne()
+        D_extension = Level_21_Description ( 2, qq_extension, sigma_extension)
+    else:
+        sigma_extension = deepcopy(sigma)
+        sigma_extension.MakeValue(p, w)
+        D_extension = Level_21_Description ( 2, qq, sigma_extension)
+        
+    return D_extension
+        
+def Level_21_1_Next (D_plus, D, Q, Ww):
+    # 
+    # given D, a (Q,W)-desc, whose ucf is w^-, where Ww = (W,w) is a partial tree
+    # given D_plus, a 1-extension of D,
+    # outputs D', the next 1-extension of D
+    #
+    
+    W = Ww.tree
+    w = Ww.node
+    
+    qq = D.desc 
+    q = qq.Node()
+    sigma = D.factor
+    pp = qq.NodeSequence()
+    p = pp[-1]
+    qq_plus = D_plus.desc
+    q_plus = qq_plus.Node()
+    W_plus = Ww.Completion()
+
+
+    D_next = NextNonConstLevel_21_Desc(D_plus, Q, W_plus)
+    if D_next is None:
+        return None
+    qq_next = D_next.desc 
+    q_next = qq_next.Node()
+    sigma_next = D_next.factor
+    sigma_plus = D_plus.factor
+    
+    Q2 = Q.Level_2_Component()
+    
+    if q.IsDiscontinuousType():
+        if not q.IsProperInitialSegment (q_next):
+            return None
+        if sigma_next.Value(Q2.Value(q).Node()) != w:
+            return None
+        return D_next
+        
+    else:
+        if not q.Minus().IsProperInitialSegment (q_next):
+            return None
+        if sigma_next.Value(Q2.Value(q.Minus()).Node()) != w:
+            return None
+        return D_next
+
+    
+
+def Level_221_PreExtension ( C, T, Q, WW):
+    #
+    # given C, a (T,Q,WW)-desc
+    # output the smallest C', a (T,Q \otimes W')-desc that extends C as a (T,Q \otimes W)-desc
+    #       None if not exist
+    #
+    if isinstance(WW,Node):
+        return None
+        # if WW=(-1), C cannot be extended
+    
+    tt = C.desc
+    tau = C.factor
+    t = tt.Node()
+    S = tt.Tree()
+    ss = tt.NodeSequence()
+    s = ss[-1]
+    W = WW.Tree()
+    ww = WW.NodeSequence()
+    w = ww[-1]
+    Ww = WW.LastPartialTreeWhenDiscontinuous()
+    
+    if s.IsMinusOne():
+        return None
+        # if WW has ends with (-1), WW has no completion
+    
+    
+    if t.IsDiscontinuousType():
+        s_minus = s.Minus()
+        D = tau.Value(s_minus)
+        D_extension = Level_21_1_Extension (D, Ww)
+        tau_extension = deepcopy(tau)
+        tau_extension.AddNodeBelowWithValueNextLevel(s.Minus(), D_extension)
+        tt_extension = deepcopy(tt)
+        tt_extension.AppendMinusOne()
+        C_extension = Level_221_Description ( 2, tt_extension, tau_extension)
+    else:
+        D = tau.Value(s)
+        D_extension = Level_21_1_Extension (D, Ww)
+        tau_extension = deepcopy(tau)
+        tau_extension.MakeValue(s, D_extension)
+        C_extension = Level_221_Description ( 2, tt, tau_extension)
+        
+    return C_extension
+        
+        
+def Level_221_Next (C_plus, C, T, Q, WW):
+    #
+    # given C_plus, a (T,Q W')-desc, or None, C , a (T,Q, WW)-desc
+    # outputs C' such that (C')^- = C_plus^-, C' > C_plus and C' is the smallest such
+    #       None if doesn't exist
+    #
+
+    def NextLevelSmallest(D, Q, W, Zz):     
+        # the smallest 1-step extension of D , as a (Q, W \otimes Z')-desc,  if possible
+        # given D is (Q,W \otimes Z)-desc
+        # None, otherwise
+        
+        qq = D.desc 
+        q = qq.Node()
+        
+        Z_plus = Zz.Completion()
+        z = Zz.Node()
+        
+        if q.IsContinuousType():
+            return None
+        PP = qq.PartialTower()
+        P = PP.Tree()
+        pp = PP.NodeSequence()
+        sigma = D.factor
+        p_last = pp[-1] 
+        if p_last.IsContinuousType():
+            return None
+            
+        if p_last.Length() > 1:
+            p_last_minus = P.MyNode(p_last.Minus())
+
+        else:
+            p_last_minus = P.root
+        
+        w_last_minus = sigma.Value(p_last_minus)
+
+        if p_last_minus.BKleft is None:
+            #the hanging node is BK leftmost already
+            w_last = NextNonConstLevel_21_Desc(None, W,Z_plus) 
+            
+        else:
+            #the hanging node is not BK leftmost
+            w_last = NextNonConstLevel_21_Desc (sigma.Value(p_last_minus.BKleft),W,Z_plus)
+            
+        w_next = w_last
+        if w_next is None:
+            return None
+        if w_next == w_last_minus:
+            return None
+            # if conflicting with the existing minimum, 
+            # impossible to extend
+            
+        #otherwise, extend it by w_last and -1  
+        qq_extend = deepcopy(qq)  
+        qq_extend.AppendMinusOne()
+        sigma_extend = deepcopy(sigma)
+        sigma_extend.AddNodeBelowWithValueNextLevel(p_last_minus, w_next)
+        D_extend = Level_221_Description ( 2, qq_extend, sigma_extend )
+        # create the new description "D_extend"
+        return D_extend    
+        
+    def NextLevelSmallestExtend (D, Q, W, Zz):
+     
+         # the smallest 1-step extension of D , as a (Q, W \otimes Z')-desc,  if possible
+        # given D is (Q,W \otimes Z)-desc
+        # None, otherwise
+        
+        qq = D.desc 
+        q = qq.Node()
+        
+        Z_plus = Zz.Completion()
+        z = Zz.Node()
+        
+        if q.IsContinuousType():
+            return None
+        PP = qq.PartialTower()
+        P = PP.Tree()
+        pp = PP.NodeSequence()
+        sigma = D.factor
+        p_last = pp[-1] 
+        if p_last.IsContinuousType():
+            return None
+            
+        if p_last.Length() > 1:
+            p_last_minus = P.MyNode(p_last.Minus())
+
+        else:
+            p_last_minus = P.root
+        
+        w_last_minus = sigma.Value(p_last_minus)
+
+        if p_last_minus.BKleft is None:
+            #the hanging node is BK leftmost already
+            w_last = NextNonConstLevel_21_Desc(None, W,Z_plus) 
+            
+        else:
+            #the hanging node is not BK leftmost
+            w_last = NextNonConstLevel_21_Desc (sigma.Value(p_last_minus.BKleft),W,Z_plus)
+            
+        w_next = w_last
+        
+        
+        while w_next is not None:
+            if w_next != w_last_minus:
+                if z not in w_next.Sign():
+                    w_next = NextNonConstLevel_21_Desc(w_next,W,Z_plus)
+                else:
+                    break
+            else:
+                break
+
+        if w_next is None:
+            return None
+                    
+        if w_next == w_last_minus:
+            return None
+            # if conflicting with the existing minimum, 
+            # impossible to extend
+            
+        #otherwise, extend it by w_last and -1  
+        qq_extend = deepcopy(qq)  
+        qq_extend.AppendMinusOne()
+        sigma_extend = deepcopy(sigma)
+        sigma_extend.AddNodeBelowWithValueNextLevel(p_last_minus, w_next)
+        D_extend = Level_221_Description ( 2, qq_extend, sigma_extend )
+        # create the new description "D_extend"
+        return D_extend    
+
+
+
+ 
+    def SameLevelSmallest(D, Q, W, Zz):
+        # the smallest description at the same level of D, as a (Q, W \otimes Z_plus)-desc, if possible, 
+        #   so that they have the same formal predecessor
+        # given D is of degree 2, a (Q, W \otimes Z)-desc
+        # None otherwise
+        
+        Q2 = Q.Level_2_Component()
+        
+        qq = D.desc 
+        q = qq.Node()
+        PP = qq.PartialTower()
+        P = PP.Tree()
+        pp = PP.NodeSequence()
+        sigma = D.factor
+        
+        Z_plus = Zz.Completion()
+        z = Zz.Node()
+        
+        if len(pp) == 0:
+            return None
+        
+        if q.IsContinuousType():
+            # if q continuous type, 
+            p_last = pp[-1]
+            
+            if p_last.Length() > 1:
+                p_last_minus = P.MyNode(p_last.Minus())
+                w_last_minus = sigma.Value(p_last_minus)
+
+            else:
+                p_last_minus = P.root
+                w_last_minus = sigma.Value(p_last_minus)
+
+            if not Q2.MyNode(q.Minus()).IsTerminal():
+                # there is a node in Q at the same level, then it is the smallest
+                q_next = Q2.MyNode(q.Minus()).first_child
+                qq_next = Q2.GetLevelTwoDescription(q_next)
+                D_next = Level_221_Description (2, qq_next, sigma)
+                return D_next
+            else:
+                # no node at the same level
+                # then we must alter the last entry in W,Z
+                w_last = sigma.Value(p_last)
+                w_next = NextNonConstLevel_21_Desc(w_last,W,Z_plus)
+                if w_next is None:
+                    return None
+                if w_next == w_last_minus:
+                    # the next entry in W,Z is already in use
+                    # impossible to move
+                    return None
+                sigma_next = deepcopy(sigma)
+                sigma_next.MakeValue(p_last, w_next)
+                D_next = Level_221_Description ( 2, qq, sigma_next )
+                return D_next
+            
+        else:
+            # if qq discontinuous type
+            if len(pp) == 1:
+                # this happens iff D is constant
+                return None
+            else:
+                p_last = pp[-2]
+                w_last = sigma.Value(p_last)
+            if p_last.Length() > 1:
+                p_last_minus = P.MyNode(p_last.Minus())
+                w_last_minus = sigma.Value(p_last_minus)
+            else:
+                p_last_minus = P.root
+                w_last_minus = sigma.Value(p_last_minus)
+                
+            if not Q2.MyNode(q).IsLastBitRightMost():
+                # firstly search the next node at the same level in Q
+                q_next = Q2.MyNode(q).right
+                qq_next = Q2.GetLevelTwoDescription(q_next)
+                D_next = Level_221_Description (2, qq_next, sigma)
+                return D_next
+            else:
+                # the current node is already rightmost at this level. 
+                # search for the next node in W, and the q-entry must end with -1
+                
+                w_last = sigma.Value(p_last)
+                w_next = NextNonConstLevel_21_Desc(w_last,W,Z_plus)
+                if w_next is None:
+                    return None
+                if w_next == w_last_minus:
+                    # the next entry in W,Z is already in use
+                    # impossible to move
+                    return None
+
+                sigma_next = deepcopy(sigma)
+                sigma_next.MakeValue(p_last, w_next)
+                qq_next = deepcopy(qq.Minus())
+                qq_next.AppendMinusOne()
+                D_next = Level_221_Description ( 2, qq_next, sigma_next )
+                return D_next               
+    
+    def SameLevelSmallestExtend (D, D_minus, Q, W, Zz):
+        #
+        # Given D and D_minus, 
+        # where formallength(D) = formallength(D_minus) if the node of D_minus cont type, +1 if discont type
+        # 
+        # 
+        # outputs the next (Q, W \otimes Z_plus)-desc D', so that D_plus and D' have the common formal Minus(): D.Minus()
+        #
+ 
+        Q2 = Q.Level_2_Component()
+        Z_plus = Zz.Completion()
+        z = Zz.Node()
+        
+        qq = D.desc 
+        q = qq.Node()
+        PP = qq.PartialTower()
+        P = PP.Tree()
+        pp = PP.NodeSequence()
+        sigma = D.factor
+        if q.IsDiscontinuousType():
+            w_last = sigma.Value(pp[-2])
+        else:
+            w_last = sigma.Value(pp[-1])
+            
+        qq_minus = D_minus.desc 
+        q_minus = qq_minus.Node()
+        sigma_minus = D_minus.factor
+        pp_minus = D_minus.desc.PartialTower().NodeSequence()
+        if q_minus.IsDiscontinuousType():
+            w_last_minus = sigma_minus.Value(pp_minus[-1].Minus())
+        else:
+            w_last_minus = sigma_minus.Value(pp_minus[-1])
+        
+        if q.IsDiscontinuousType():
+            if len(pp) == 0:
+                return None
+            if len(pp) == 1:
+                # this happens iff D is constant
+                # of course it never happens, given the assumption of the parameters of this function
+                return None
+            else:
+                p_last = pp[-2]
+            if p_last.Length() > 1:
+                p_last_minus = P.MyNode(p_last.Minus())
+            else:
+                p_last_minus = P.root
+                
+            if not Q2.MyNode(q).IsLastBitRightMost():
+                # firstly search the next node at the same level in Q
+                q_next = Q2.MyNode(q).right
+                qq_next = Q2.GetLevelTwoDescription(q_next)
+                D_next = Level_221_Description (2, qq_next, sigma)
+                return D_next
+            else:
+                # the current node is already rightmost at this level. 
+                # search for the next node in W, and the q-entry must end with -1
+                w_next = Level_21_1_Next(w_last,w_last_minus,W,Zz)
+                
+                while w_next is not None:
+                    if w_next != w_last_minus:
+                        if z not in w_next.Sign():
+                            w_next = NextNonConstLevel_21_Desc(w_next,W,Z_plus)
+                        else:
+                            break
+                    else:
+                        break
+
+                if w_next is None:
+                    return None
+                    
+
+                if w_next == w_last_minus:
+                    # the next entry in W,Z is already in use
+                    # impossible to move
+                    return None                    
+                
+                sigma_next = deepcopy(sigma)
+                sigma_next.MakeValue(p_last, w_next)
+                qq_next = deepcopy(qq.Minus())
+                qq_next.AppendMinusOne()
+                D_next = Level_221_Description ( 2, qq_next, sigma_next )
+                return D_next 
+        else:
+            p_last = pp[-1]
+            
+            if p_last.Length() > 1:
+                p_last_minus = P.MyNode(p_last.Minus())
+
+            else:
+                p_last_minus = P.root
+
+            if not Q2.MyNode(q.Minus()).IsTerminal():
+                # there is a node in Q at the same level, then it is the smallest
+                q_next = Q2.MyNode(q.Minus()).first_child
+                qq_next = Q2.GetLevelTwoDescription(q_next)
+                D_next = Level_221_Description (2, qq_next, sigma)
+                return D_next
+            else:
+                # no node at the same level
+                # then we must alter the last entry in W,Z
+                w_last = sigma.Value(p_last)
+                w_next = Level_21_1_Next(w_last,w_last_minus,W,Zz)
+                
+                while w_next is not None:
+                    if w_next != w_last_minus:
+                        if z not in w_next.Sign():
+                            w_next = NextNonConstLevel_21_Desc(w_next,W,Z_plus)
+                        else:
+                            break
+                    else:
+                        break
+
+                if w_next is None:
+                    return None
+                if w_next == w_last_minus:
+                    # the next entry in W,Z is already in use
+                    # impossible to move
+                    return None
+                sigma_next = deepcopy(sigma)
+                sigma_next.MakeValue(p_last, w_next)
+                D_next = Level_221_Description ( 2, qq, sigma_next )
+                return D_next
+        
+                    
+    Q1 = Q.Level_1_Component()
+    Q2 = Q.Level_2_Component()
+#    if C_plus.degree == 1:
+#        return NextNonConstLevel_21_Desc(C_plus, T, Q1)
+#    
+    #now assume C_plus has degree 2
+#    if C_plus.IsConstant():
+#        return None
+#    
+    #now assume C_plus is non-constant
+    #we would like to extend C
+    tt = C.desc
+    tau = C.factor
+    ss = tt.NodeSequence()
+    s = ss[-1]
+    t = tt.Node()
+    
+    
+    Ww = WW.LastPartialTreeWhenDiscontinuous()
+    W = WW.Tree()
+    W_plus = WW.Completion()
+    w = Ww.Node()
+    
+    if t.IsDiscontinuousType():
+        # if t discontinuous type, all extensions of C must formally extend C
+        
+        D = tau.Value(s.Minus())
+        # D is the level-21 desc to be extended
+        
+        critical_length = t.Length() + 1
+        
+    else:
+        
+        
+        D = tau.Value(s)
+        # D is the level-21 desc to be extended
+        
+        critical_length = t.Length()
+    
+    
+    current = C_plus
+    
+    if current is not None:
+        if current.LengthFormal() == critical_length:
+            bound = SameLevelSmallestExtend(current, C, T, Q, Ww)
+        else: 
+            bound = SameLevelSmallest(current, T, Q, Ww)
+        # try to move the last bit right
+    else:
+        bound = Level_221_PreExtension (C, T, Q, WW)
+    # bound is a candidate
+
+    if bound is not None:
+        while bound is not None:
+            current = bound
+            bound = NextLevelSmallest(current, T, Q, Ww)
+        bound = current
+    
+    
+    while True:
+        
+        if bound is None:
+            if current is None:
+                return None
+            if current.Node().Length() == critical_length:
+                return None
+            current = current.MinusFormal()
+            bound = current
+            continue
+        
+        else:
+            if bound.Node().Length() == critical_length:
+                if bound.Node().IsContinuousType():
+                    D_last = bound.factor.Value(bound.desc.PartialTower().LastNodeWhenContinuous())
+                    if D_last.IsContinuousType():
+                        if D_last.UCF() == w:
+                            current = SameLevelSmallestExtend(bound, C, T, Q, Ww)
+                            bound = current
+                            while bound is not None:
+                                current = bound
+                                bound = NextLevelSmallest(current, T, Q, Ww)
+                            bound = current
+                            continue
+
+        print("get a description!")
+        bound.Output(5)
+        return bound
+
+    
+    
+
+def EnumerateLevel_221_Extensions (C,T,Q,WW):
+    
+    C_plus = Level_221_Next(None, C,T,Q,WW)
+    while C_plus is not None:
+        yield C_plus
+        C_plus = Level_221_Next(C_plus, C, T, Q, WW)
+    return
     
 class Level_leq_2_Factor (object):
     ' a factoring map between level <=2 trees'
@@ -2374,11 +3044,6 @@ class Level_leq_2_Factor (object):
         self.domain = domain
         self.factor_1 = factor_1
         self.factor_2 = factor_2
-        
-    
-        
-    
-            
         
     
     
@@ -2402,9 +3067,8 @@ class Level_222_Factor (Level_leq_2_Factor):
         
     def IsLevel_222_Factor (self):
         #does it factor (self.domain, *, *) ?
-        e = self.domain.EnumerateDomain() 
         
-        for x in e:
+        for x in self.domain.EnumerateDomain() :
             if not self.Value(x).IsLevel_221_Desc():
                 return False
             if x.degree == 1:
@@ -2417,11 +3081,11 @@ class Level_222_Factor (Level_leq_2_Factor):
         if not self.Value(Level_leq_2_Node()).IsConstant():
             return False
         
-        for [x,x_prime] in combinations(e,2):
+        for [x,x_prime] in combinations(self.domain.EnumerateDomain() ,2):
             if self.Value(x) >= self.Value(x_prime):
                 return False 
         
-        for x in e:
+        for x in self.domain.EnumerateDomain() :
             if x.degree == 2 and (not x.IsConstant()):
                 if not self.Value(x.Minus()).IsProperInitialSegment(self.Value(x)):
                     return False
@@ -2445,196 +3109,112 @@ class Level_222_Factor (Level_leq_2_Factor):
             if not self.Value(x).IsLevel_221_Desc_22(T,Q):
                 return False
         return True    
-        
-        
-def MakeLevel_221_Desc (T,Q):
-    # make a level <=2 tree X and a "level-2 tree isomorphism" psi between X and T otimes Q
+
+def CreatePartialLevelOneTreeFromUCF (W, w):
     
-    #the constant is in X by default
-    psi = Level_222_Factor()
-    root = Node([])
-    
-    
-    #length-0
-    X1 = LevelOneTree()
-    DD = MakeLevel_21_Desc(T, Q.Level_1_Component())
-    for D in DD[:-1]:
-        X1.AddNodeBelowNextLevel( root)
-        psi.factor_1.AddNodeBelowWithValueNextLevel( root, D)
+    if w == MinusOne():
+        return PartialLevelOneTree(W, MinusOne())
+    w_plus = TreeNode( w.entry + [W.MyNode(w).number_of_children])
+    return PartialLevelOneTree(W, w_plus)
         
+def TensorProduct_22( T,Q):
+    # outputs psi that factors (X,T, Q), X is a representation of T \otimes Q
+    
+    Q1 = Q.Level_1_Component()
+    Q2 = Q.Level_2_Component()
+    
+    psi1 = TensorProduct_21( T, Q1)
+    X1 = psi1.Domain()
+    
     X2 = LevelTwoTree()
-    W_sample = LevelOneTree()
-    T2 = T.Level_2_Component()
-    TT = T2.EnumerateDomain()
+    psi2 = FuncTree(Level_221_Description())
+    psi2.root.immediate_extensions = LevelOneTree()
     
-    ## layer T by lengths of nodes
-    T_layer = []
-    for k in range(len(TT)):
-        temp = []
-        for t in TT:
-            if t.Length() == k:
-                temp.append(t)
-        if len(temp)>0:
-            T_layer.append(temp)
+    current_node = X2.root 
+        
+    while True:
+        current_desc = psi2.Value(current_node)
+        WW = X2.GetPartialLevelOneTower(current_node)
+        if WW.UniformCofinality() != MinusOne():
+            W_plus = WW.Completion()
+            for C in EnumerateLevel_221_Extensions(current_desc, T, Q, WW):
+                Ww_plus = CreatePartialLevelOneTreeFromUCF (W_plus, C.BaseUCF() )
+                X2.AddNodeBelowWithValueNextLevel (current_node, Ww_plus)
+                psi2.AddNodeBelowWithValueNextLevel (current_node, C)
+        if current_node.IsTerminal():
+            while current_node is not None:
+                if current_node.IsLastBitRightMost():
+                    current_node = current_node.parent 
+                else:
+                    current_node = current_node.right
+                    break
+            if current_node is None:
+                break
         else:
-            break
-    #T_layer is a double list, the k-th column consists of nodes of length k
-
-    depth = 0
-    outmarker = True
-    while outmarker == True:
-        outmarker = False
-        depth += 1
-        
-        W_sample.AddNodeBelowNextLevel(root)
-        #W_samle is a level-1 tree consisting of (0), ..., (depth-1)
-        
-        D_sample_list = MakeLevel_21_Desc(Q, W_sample)
-        # a list of (Q,W_sample) desc
-        
-        for k in range(1, len(T_layer)):
-            for DD in combinations(D_sample_list, k):
-                for t in T_layer[k]:    
-                    #discontinuous type
-                    SS = T2.GetPartialLevelOneTower(t)
-                    S = SS.Tree()
-                    tt = T2.GetLevelTwoDescription(t)
-                    S_BKenumerate = S.BKEnumerate()
-                    
-                    tau = Level_121_Factor()
-                    tau.CopyIntoDomain(S)
-                    for i in range(len(S_BKenumerate)):
-                        tau.MakeValue( S_BKenumerate[i], DD[i] ) 
-
-                    D_candidate = Level_221_Description( 2, tt, tau)
-                    
-                    base_candidate = D_candidate.BaseTower()
-                    if base_candidate is not None:
-                        W = base_candidate.Tree()
-                        if W.Cardinality() == depth:
-                            # indeed the new description
-                            # add into X and psi
-                            outmarker = True
-                            test_D_minus = D_candidate.Minus()
-                            test_psi_factor_2 = psi.factor_2
-                            test_pred = test_psi_factor_2.Preimage(test_D_minus)
-                            predecessor_in_X = psi.factor_2.Preimage (D_candidate.Minus())
-                            current = predecessor_in_X
-                            if current.immediate_extensions.IsNonTrivial():
-                                current_next = current.first_child
-                                while current_next is not None:
-                                    if current_next.value < D_candidate:
-                                        current_next = current_next.right
-                                if current_next is not None:
-                                    current = current_next
-                                    
-                            # current is the position to be added
-                            if current.Length() == depth-1:
-                                X2.AddNodeBelowNextLevel(current)
-                                psi.factor_2.AddNodeBelowWithValueNextLevel(current, D_candidate)
-                            else:
-                                X2.AddNodeBelowSameLevel(current)
-                                psi.factor_2.AddNodeBelowWithValueSameLevel(current, D_candidate)
-                    #finished checking D_candidate when discontinuous
-                for u in T_layer[k-1]:
-                    #continuous type
-                    t = deepcopy(u)
-                    t.AppendMinusOne()
-                    SS = T2.GetPartialLevelOneTower(t)
-                    S = SS.Tree()
-                    tt = T2.GetLevelTwoDescription(t)
-                    S_BKenumerate = S.BKEnumerate()
-                    
-                    tau = Level_121_Factor()
-                    tau.CopyIntoDomain(S)
-                    for i in range(len(S_BKenumerate)):
-                        tau.MakeValue( S_BKenumerate[i], DD[i] ) 
-
-                    D_candidate = Level_221_Description( 2, tt, tau)
-                    
-                    base_candidate = D_candidate.BaseTower()
-                    if base_candidate is not None:
-                        W = base_candidate.Tree()
-                        if W.Cardinality() == depth:
-                            # indeed the new description
-                            # add into X and psi
-                            outmarker = True
-                            predecessor_in_X = psi.factor_2.Preimage (D_candidate.Minus())
-                            current = predecessor_in_X
-                            if current.immediate_extensions.IsNonTrivial():
-                                current = current.first_child
-                                while current.value < D_candidate:
-                                    current = current.right
-                            # current is the position to be added
-                            if current.Length() == depth-1:
-                                X2.AddNodeBelowNextLevel(current)
-                                psi.factor_2.AddNodeBelowWithValueNextLevel(current, D_candidate)
-                            else:
-                                X2.AddNodeBelowSameLevel(current)
-                                psi.factor_2.AddNodeBelowWithValueSameLevel(current, D_candidate)
-                    #finished checking D_candidate when discontinuous
-                    
-                    
-                    
-                #check next node in T
-            #check next description by sample
-        #if a new desc has been added, marker was turned into True again, and we loop    
-    X = Level_leq_2_Tree()
-    X.tree_1 = X1
-    X.tree_2 = X2
-    psi.domain = X            
+            current_node = current_node.first_child
+ 
+    X = Level_leq_2_Tree(X1,X2)
+    
+    psi = Level_222_Factor(X, psi1, psi2)
     return psi
-        
+    
+#print("Input Q\n")    
+#Q = Level_leq_2_Tree()
+#Q.Input(0)
 
 
-print("input Q")    
+
+
+#print("Input W\n")
+#W = LevelOneTree()
+
+#W.Input(0)
+
+#print("Computing.....")
+
+#current = NextNonConstLevel_21_Desc(None, Q,W)
+#i = 1
+
+#fo = open("level_21.txt", "wb")
+
+#while current is not None:
+    #s = "Description " + str(i) + ":\n" + current.String(2) + "\n"
+    #i += 1
+    #current = NextNonConstLevel_21_Desc(current, Q, W)
+    #fo.write( s);
+
+    
+#print("There are"),
+#print(i-1),
+#print("non-constant (Q,W)-descriptions!")
+#print("They are written to level_21.txt")
+
+
+#fo.close()
+
+#a = input()
+print("input T")
+T = Level_leq_2_Tree()
+T.Input(0)
+print("input Q")
 Q = Level_leq_2_Tree()
 Q.Input(0)
-
-
-
-
-print("input W")
+print("Computing.....")
+psi = TensorProduct_22(T,Q)
+print("number of (T,Q,*)-desc")
+X = psi.domain
+print(X.Cardinality())
 W = LevelOneTree()
-
+print("input W:")
 W.Input(0)
 
-print("Computing.....")
-l = MakeLevel_21_Desc(Q,W)
-
-print("There are"),
-print(len(l)),
-print("descriptions!")
-print("They are:")
-for i in range(len(l)):
-    print("Description"),
-    print (i+1),
-    print(":")
-    l[i].Output(1)
-    #    l[i].OutputProperties(2)
-
-
-
-a = input()
-print("Computing.....")
-ll = MakeLevel_221_Desc(T,Q)
-l = ll.domain.tree_1.Enumerate()
-l2 = ll.domain.tree_2.Enumerate()
-
-print("There are"),
-print(len(l)+len(l2)),
-print("descriptions!")
-print("They are:")
-for i in range(len(l)):
-    print("Description"),
-    print (i+1),
-    print(":")
-    ll.factor_1.Value(l[i]).Output(1)
-
-for i in range(len(l2)):
-    print("Description"),
-    print (i+1+len(l)),
-    print(":")
-    ll.factor_2.Value(l2[i]).Output(1)
-    
-    #    l[i].OutputProperties(2)
+xw = TensorProduct_21(X, W)
+print("Number of (TQ, W)-desc:")
+print(xw.cardinality)
+qw = TensorProduct_21(Q, W)
+qw_tree = qw.Domain()
+print("Number of (Q,W)-desc:")
+print(qw.cardinality)
+tqw = TensorProduct_21(T, qw_tree)
+print("Number of (T,QW)-desc:")
+print(tqw.cardinality)
