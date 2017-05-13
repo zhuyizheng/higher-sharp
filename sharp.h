@@ -20,7 +20,11 @@ string EmptyString(unsigned long d);
 
 enum class DEGREE
 {
-    ZERO, ONE, TWO, TWOLEFT
+    ZERO, ONE, TWO
+};
+
+enum class DIRECTION{
+    NA, DOWN, LEFT
 };
 
 class Level_322_Desc;
@@ -45,14 +49,11 @@ typedef vector<SingleSequence>
 DoubleSequence;
 
 
-typedef pair<int, SingleSequence>
-MixedType;
-
-
-
 typedef TreeNode<unsigned long>
 LevelOneTreeNode;
 class LevelOneTree;
+
+class PartialLevelOneTree;
 
 typedef FuncTreeNode<unsigned long, SingleSequence>
 LevelOneFactorNode;
@@ -64,6 +65,8 @@ typedef FuncTreeNode <SingleSequence, PartialLevelOneTree>
 LevelTwoTreeNode;
 class LevelTwoTree;
 
+class PartialLevel_leq_2_Tree;
+
 template <typename A>
 class LevelTwoTreeBasedDesc;
 
@@ -72,9 +75,6 @@ Level_21_Desc;
 
 typedef LevelTwoTreeBasedDesc<Level_21_Desc>
 Level_221_Desc;
-
-typedef pair<int, Level_21_Desc>
-MixedType2;
 
 string String (const Level_21_Desc & D);
 
@@ -207,7 +207,8 @@ string String (const vector<tuple<int,SingleSequence,SingleSequence>> & r)
         {
             output += String(std::get<2> (i));
         }
-        else if (std::get<0>(i) == 1){
+        else if (std::get<0>(i) == 1)
+        {
             output += String(std::get<1> (i));
         }
         else
@@ -249,7 +250,7 @@ private:
 
 public:
 
-    ~TreeNode(){}
+    ~TreeNode() {}
 
     TreeNode    ( ) :
         // by default, creates the empty node
@@ -323,7 +324,6 @@ public:
     {
         return entry >= p.entry;
     }
-
 
     void MakeEntry(const TYPE & e)
     {
@@ -428,7 +428,7 @@ private:
 
     Tree (unsigned long c, TreeNode<TYPE> * r ) :
         cardinality(c),
-        root (r){}
+        root (r) {}
 
 
 // make "newnode" a new child below s, on the rightmost
@@ -563,25 +563,28 @@ private:
 
 public:
 
-    friend void swap (Tree & S, Tree & T){
+    friend void swap (Tree & S, Tree & T)
+    {
         std::swap(S.root,T.root);
         std::swap(S.cardinality, T.cardinality);
     }
 
     Tree (Tree && T) :
         cardinality(0),
-        root(nullptr){
+        root(nullptr)
+    {
         swap(*this,T);
-        }
+    }
 
-  Tree& operator = (Tree T){
+    Tree& operator = (Tree T)
+    {
         swap(*this,T);
         return *this;
-   }
+    }
 
-  //  {
+    //  {
 
-  //  return *this;}
+    //  return *this;}
 
     Tree(const TYPE & root_entry = TYPE() ):
         cardinality (1) ,
@@ -652,7 +655,8 @@ public:
     //destroy the tree
     ~Tree()
     {
-        if (root == nullptr){
+        if (root == nullptr)
+        {
             return;
         }
         auto to_delete = SmallestNode();
@@ -972,6 +976,18 @@ public:
         return newnode;
     }
 
+    TreeNode<TYPE> * Add (const DIRECTION & i,
+                          TreeNode<TYPE> * const s,
+                          const TYPE & y){
+                if (i == DIRECTION::DOWN){
+                    return AddChildBelow(s,y);
+                }
+                else {
+                    return AddSiblingLeft(s,y);
+                }
+
+                          }
+
     TreeNode<TYPE> * Remove (TreeNode<TYPE> * s)
     {
         // remove the terminal node , non-root , last child of parent s
@@ -1030,7 +1046,6 @@ public:
         //return the parent of the removed node
         return parent;
     }
-
 
     TreeNode<TYPE> * MyNodeImmediateExtend (const TreeNode<TYPE>* const s, const TYPE & r) const
     {
@@ -1260,6 +1275,7 @@ public:
         return current;
     }
 
+
     const VALUETYPE & Value (const vector<ENTRYTYPE> & r) const
     {
         auto n = MyNodeInDomain(r);
@@ -1297,6 +1313,16 @@ public:
     {
         return Tree<pair<ENTRYTYPE,VALUETYPE>>::AddSiblingLeft(
                    s, pair<ENTRYTYPE,VALUETYPE> (x,y)    );
+    }
+
+    TreeNode<pair<ENTRYTYPE,VALUETYPE>>* Add(
+                                        const DIRECTION i,
+                                         TreeNode<pair<ENTRYTYPE,VALUETYPE>> * const s,
+                                         const ENTRYTYPE & x,
+                                         const VALUETYPE & y)
+    {
+        return Tree<pair<ENTRYTYPE,VALUETYPE>>::Add(
+                i,   s, pair<ENTRYTYPE,VALUETYPE> (x,y)    );
     }
 };
 
@@ -1392,6 +1418,29 @@ FuncTreeNode<SingleSequence,VALUETYPE> * AddSiblingLeft (
 }
 
 
+
+// a template of adding  a point in a function
+// based on a double tree
+// need direction : down or left
+// just need the value
+//
+template <typename VALUETYPE>
+FuncTreeNode<SingleSequence,VALUETYPE> * Add (
+    const DIRECTION i,
+    FuncTree<SingleSequence,VALUETYPE> & f,
+    FuncTreeNode<SingleSequence,VALUETYPE> * const s,
+    const VALUETYPE & new_in_image){
+
+    if (i == DIRECTION::DOWN){
+        return AddChildBelow(f,s,new_in_image);
+    }
+        else{
+        return AddSiblingLeft(f,s,new_in_image);
+    }
+
+    }
+
+
 class LevelOneTree : public Tree<unsigned long>
 {
     //a level-1 tree
@@ -1407,7 +1456,8 @@ public:
     LevelOneTree (LevelOneTree && P) :
         Tree<unsigned long>(std::move(P)) {}
 
-    LevelOneTree & operator  = (LevelOneTree P) {
+    LevelOneTree & operator  = (LevelOneTree P)
+    {
         swap(*this,P);
         return *this;
     }
@@ -1478,6 +1528,20 @@ public:
         output.emplace_back(n->NumberOfChildren());
         return output;
     }
+
+    SingleSequence CreateNodeFromUCF (const LevelOneTreeNode* s) const
+    {
+        SingleSequence output = EntireEntry(s);
+        output.emplace_back(s->NumberOfChildren());
+        return output;
+    }
+
+
+    PartialLevelOneTree CreatePartialExtensionFromUCF() const;
+    PartialLevelOneTree CreatePartialExtensionFromUCF(const SingleSequence & s) const;
+    PartialLevelOneTree CreatePartialExtensionFromUCF(const LevelOneTreeNode * const s) const;
+
+    vector<PartialLevelOneTree> CreatePartialExtensions () const;
 };
 
 
@@ -1495,22 +1559,25 @@ private:
 
 public:
     ~PartialLevelOneTree () = default;
+    /*
 
-  /*  PartialLevelOneTree (PartialLevelOneTree&& P)
-        {
+    PartialLevelOneTree (PartialLevelOneTree&& P)
+    {
         swap (*this,P);
-        }
+    }
 
-    friend void swap  (PartialLevelOneTree M, PartialLevelOneTree P){
+    friend void swap  (PartialLevelOneTree & M, PartialLevelOneTree & P)
+    {
         swap(M.tree,P.tree);
         std::swap(M.node_minus, P.node_minus);
     }
 
-    PartialLevelOneTree& operator= (PartialLevelOneTree P){
+    PartialLevelOneTree& operator= (PartialLevelOneTree P)
+    {
         swap(*this,P);
         return *this;
-    }*/
-
+    }
+*/
     PartialLevelOneTree() :
         tree (LevelOneTree ()),
         node_minus (tree.Root()) {}
@@ -1531,12 +1598,22 @@ public:
         }
     }
 
+    //create a partial level <=1 tree of degree 0 from P
     PartialLevelOneTree(const LevelOneTree & P) :
         tree(P),
         node_minus (nullptr) {}
 
-
+    // create a pratil level <= 1 tree of degree 1
+    //  from P and the ucf s
     PartialLevelOneTree(const LevelOneTree & P, const SingleSequence & s) :
+        tree(P)
+    {
+        node_minus = tree.MyNode(s);
+    }
+
+    // create a pratil level <= 1 tree of degree 1
+    //  from P and the node in P
+    PartialLevelOneTree(const LevelOneTree & P, const LevelOneTreeNode * const s) :
         tree(P)
     {
         node_minus = tree.MyNode(s);
@@ -1607,6 +1684,34 @@ public:
 };
 
 
+PartialLevelOneTree LevelOneTree::CreatePartialExtensionFromUCF() const
+{
+    return PartialLevelOneTree(*this);
+}
+
+PartialLevelOneTree LevelOneTree::CreatePartialExtensionFromUCF(
+    const SingleSequence & s) const
+{
+    return PartialLevelOneTree(*this, CreateNodeFromUCF(s));
+}
+PartialLevelOneTree LevelOneTree::CreatePartialExtensionFromUCF(
+    const LevelOneTreeNode * const s) const
+{
+    return PartialLevelOneTree(*this, CreateNodeFromUCF(s));
+}
+
+vector<PartialLevelOneTree>   LevelOneTree::CreatePartialExtensions () const
+{
+    vector<PartialLevelOneTree> v;
+    v.emplace_back(PartialLevelOneTree(*this));
+    for (auto i = Root()->FirstChild();
+            i != nullptr;
+            i = NextEnumerate(i))
+    {
+        v.emplace_back(CreatePartialExtensionFromUCF(i));
+    }
+    return v;
+}
 
 class LevelTwoTree: public FuncTree < SingleSequence, PartialLevelOneTree>
 {
@@ -1659,14 +1764,14 @@ private:
             }
             if (k < pp.size()+1)
             {
-                AddChildBelow(s,
-                              K.EntireEntry(e),
-                              PartialLevelOneTree (P,
-                                                   pp[pp.size()-k]));
+                FuncTree<SingleSequence,PartialLevelOneTree>::AddChildBelow(s,
+                        K.EntireEntry(e),
+                        PartialLevelOneTree (P,
+                                             pp[pp.size()-k]));
             }
             else
             {
-                AddChildBelow(s, K.EntireEntry(e), PartialLevelOneTree(P));
+                FuncTree<SingleSequence,PartialLevelOneTree>::AddChildBelow(s, K.EntireEntry(e), PartialLevelOneTree(P));
             }
 
         }
@@ -1681,10 +1786,11 @@ public:
     LevelTwoTree(const LevelTwoTree& Q) = default;
 
     LevelTwoTree(LevelTwoTree && f) :
-        FuncTree<SingleSequence,PartialLevelOneTree>(std::move(f)){}
+        FuncTree<SingleSequence,PartialLevelOneTree>(std::move(f)) {}
 
 
-    LevelTwoTree& operator=(LevelTwoTree T)  {
+    LevelTwoTree& operator=(LevelTwoTree T)
+    {
         swap (*this, T);
         return *this;
     }
@@ -1774,7 +1880,7 @@ public:
     //the tree component of Q(s)
     const LevelOneTree & TreeValue(const DoubleSequence & s) const
     {
-        return Value(MyNodeInDomain(s)).Tree();
+        return Value(s).Tree();
     }
     const LevelOneTree & TreeValue(const LevelTwoTreeNode * const s) const
     {
@@ -1784,7 +1890,7 @@ public:
     // the node minus value of Q(s)
     SingleSequence NodeMinusValue(const DoubleSequence & s) const
     {
-        return Value(MyNodeInDomain(s)).NodeMinusSequence();
+        return Value(s).NodeMinusSequence();
     }
     // the node minus value of Q(s)
     SingleSequence NodeMinusValue(const LevelTwoTreeNode * const s) const
@@ -1796,6 +1902,10 @@ public:
     SingleSequence CreateHangingNode (const DoubleSequence & s) const
     {
         return Value(s).CreateHangingNode();
+    }    //the hanging node of Q(s)
+    SingleSequence CreateHangingNode (const LevelTwoTreeNode * const s) const
+    {
+        return Value(s).CreateHangingNode();
     }
 
     //the completion node of Q(s)
@@ -1803,7 +1913,113 @@ public:
     {
         return Value(s).Completion();
     }
+    LevelOneTree CreateCompletion (const LevelTwoTreeNode * const s) const
+    {
+        return Value(s).Completion();
+    }
 
+
+    // the new node has degree 0
+    // add child below
+    LevelTwoTreeNode *  AddChildBelow(LevelTwoTreeNode * const s)
+    {
+        auto completion = Value(s).Completion();
+        auto new_partial_tree = PartialLevelOneTree(completion);
+
+        return ::AddChildBelow(*this,s,new_partial_tree);
+    }
+
+    LevelTwoTreeNode *  AddChildBelow(const DoubleSequence & s)
+    {
+        return AddChildBelow(this->MyNodeInDomain(s));
+    }
+
+
+    // the new node has degree 1
+    //add child below
+    LevelTwoTreeNode *  AddChildBelow(LevelTwoTreeNode * const s,
+                                      const SingleSequence & u)
+    {
+        auto completion = Value(s).Completion();
+        auto new_partial_tree = PartialLevelOneTree(completion,u);
+
+        return ::AddChildBelow(*this,s, new_partial_tree);
+    }
+    LevelTwoTreeNode *  AddChildBelow(const DoubleSequence & s,
+                                      const SingleSequence & u)
+    {
+        return AddChildBelow(this->MyNodeInDomain(s),u);
+    }
+
+
+
+    // the new node has degree 0
+    // add an elder sister on the left
+    LevelTwoTreeNode *  AddSiblingLeft(LevelTwoTreeNode * const s)
+    {
+        auto completion = Value(s).Tree();
+        auto new_partial_tree = PartialLevelOneTree(completion);
+
+        return ::AddSiblingLeft(*this,s,new_partial_tree);
+    }
+
+    LevelTwoTreeNode *  AddSiblingLeft(const DoubleSequence & s)
+    {
+        return AddSiblingLeft(this->MyNodeInDomain(s));
+    }
+
+
+    // the new node has degree 1
+    // add an elder sister on the left
+    LevelTwoTreeNode *  AddSiblingLeft(LevelTwoTreeNode * const s,
+                                       const SingleSequence & u)
+    {
+        auto completion = Value(s).Tree();
+        auto new_partial_tree = PartialLevelOneTree(completion,u);
+
+        return ::AddSiblingLeft(*this,s, new_partial_tree);
+    }
+    LevelTwoTreeNode *  AddSiblingLeft(const DoubleSequence & s,
+                                       const SingleSequence & u)
+    {
+        return AddSiblingLeft(this->MyNodeInDomain(s),u);
+    }
+
+    // the new node has degree 0
+    // add
+    LevelTwoTreeNode *  Add(const DIRECTION & direction,
+                            LevelTwoTreeNode * const s)
+    {
+        if (direction == DIRECTION::DOWN)
+            return AddChildBelow(s);
+        else
+            return AddSiblingLeft(s);
+    }
+
+    LevelTwoTreeNode *  Add(const DIRECTION & direction,
+                            const DoubleSequence & s)
+    {
+        return Add(direction,this->MyNodeInDomain(s));
+    }
+
+
+    // the new node has degree 1
+    // add an elder sister on the left
+    LevelTwoTreeNode *  Add( const DIRECTION & direction,
+                            LevelTwoTreeNode * const s,
+                                       const SingleSequence & u)
+    {
+        if (direction == DIRECTION::DOWN)
+            return AddChildBelow(s,u);
+        else
+            return AddSiblingLeft(s,u);
+    }
+    LevelTwoTreeNode *  Add( const DIRECTION & direction,
+                            const DoubleSequence & s,
+                                       const SingleSequence & u)
+    {
+        return Add(direction,this->MyNodeInDomain(s),u);
+    }
 };
 
 
@@ -1850,7 +2066,8 @@ public:
         swap(P.tree_2,Q.tree_2);
     }
 
-    Level_leq_2_Tree & operator = (Level_leq_2_Tree Q) {
+    Level_leq_2_Tree & operator = (Level_leq_2_Tree Q)
+    {
         swap(*this,Q);
         return *this;
     }
@@ -1917,12 +2134,13 @@ public:
 
     LevelTwoTreeBasedDesc(LevelTwoTreeBasedDesc&& D)
     //    LevelTwoTreeBasedDesc()
-        {
-            swap(*this,D);
-        }
+    {
+        swap(*this,D);
+    }
 
     friend void swap(LevelTwoTreeBasedDesc & C,
-                     LevelTwoTreeBasedDesc & D){
+                     LevelTwoTreeBasedDesc & D)
+    {
         std::swap(C.degree, D.degree);
         std::swap(C.node_1,D.node_1);
         std::swap(C.node_2,D.node_2);
@@ -1931,7 +2149,8 @@ public:
         std::swap(C.ucf_at_domain,D.ucf_at_domain);
     }
 
-    LevelTwoTreeBasedDesc& operator= (LevelTwoTreeBasedDesc D){
+    LevelTwoTreeBasedDesc& operator= (LevelTwoTreeBasedDesc D)
+    {
         swap(*this,D);
         return *this;
     }
@@ -2183,7 +2402,7 @@ public:
                 factor_string += ::String(factor.Value(p));
                 s += EmptyString(d + indent) + factor_string + "\n";
             }
- //           s+= "Representation: "+ ::String(Representation()) + "\n";
+//           s+= "Representation: "+ ::String(Representation()) + "\n";
 
         }
 
@@ -2229,7 +2448,7 @@ public:
                 factor_string += factor.Value(p).String(d+indent);
                 s += EmptyString(d + indent) + factor_string + "\n";
             }
- //           s+= "Representation: "+ ::String(Representation()) + "\n";
+//           s+= "Representation: "+ ::String(Representation()) + "\n";
 
         }
 
@@ -2434,8 +2653,9 @@ public:
 };
 
 
-string String(const Level_21_Desc & D) {
-return D.String();
+string String(const Level_21_Desc & D)
+{
+    return D.String();
 }
 
 
@@ -2855,7 +3075,7 @@ shared_ptr<Level_221_Desc> LeftCandidate(const Level_221_Desc & C,
         if (node_in_T2->IsEmpty())
         {
             // it is (least desc, -1)
-           return nullptr;
+            return nullptr;
             // squezed out
         }
 
@@ -3239,10 +3459,18 @@ Level_222_Factor TensorProduct(const Level_leq_2_Tree & T, const Level_leq_2_Tre
     auto temp_factor = current_factor;
     auto temp_tree = current_tree;
 
-
+    unsigned shiwan = 1;
 
     while(true)
     {
+
+        if (pi.Cardinality()>shiwan * 100000)
+        {
+            cout << pi.Cardinality()<<" added!"<<endl;
+            cout <<"continue?"<<endl;
+            cin.get();
+            shiwan = pi.Cardinality()/100000 + 1;
+        }
 
         pi.CreateChildren(temp_tree,temp_factor,T,Q);
 
@@ -3275,7 +3503,6 @@ Level_222_Factor TensorProduct(const Level_leq_2_Tree & T, const Level_leq_2_Tre
     }
 }
 
-
 string String (const vector<tuple<int,SingleSequence,Level_21_Desc>> & r)
 {
     string output;
@@ -3285,7 +3512,8 @@ string String (const vector<tuple<int,SingleSequence,Level_21_Desc>> & r)
         {
             output += String(std::get<2> (i));
         }
-        else if (std::get<0>(i) == 1){
+        else if (std::get<0>(i) == 1)
+        {
             output += String(std::get<1> (i));
         }
         else
@@ -3295,6 +3523,843 @@ string String (const vector<tuple<int,SingleSequence,Level_21_Desc>> & r)
     }
     return output;
 }
+
+
+
+class PartialLevel_leq_2_Tree
+{
+
+private:
+
+    Level_leq_2_Tree    tree;
+    DEGREE              degree;
+    DIRECTION           direction;
+    LevelOneTreeNode *  node_minus_1;
+    LevelTwoTreeNode *  node_minus_2;
+    //
+    // degree can be ZERO ONE TWO
+    // direction can be NA DOWN LEFT
+    //      DOWN means going down in the level-2 tree
+    //      LEFT means going left
+    // node_minus_1 is the sequence in the level-1 tree
+    // node_minus_2 is the sequence in the level-2 tree
+    // the actual node is the extension of node_minus
+    //          (extension on the double , or last of the double)
+    //
+
+public:
+    ~PartialLevel_leq_2_Tree () = default;
+
+    PartialLevel_leq_2_Tree (PartialLevel_leq_2_Tree&& P)
+    {
+        swap (*this,P);
+    }
+
+    friend void swap  (PartialLevel_leq_2_Tree & M,
+                       PartialLevel_leq_2_Tree & P)
+    {
+        swap(M.tree,P.tree);
+        std::swap(M.degree,P.degree);
+        std::swap(M.direction,P.direction);
+        std::swap(M.node_minus_1, P.node_minus_1);
+        std::swap(M.node_minus_2, P.node_minus_2);
+    }
+
+    PartialLevel_leq_2_Tree& operator= (PartialLevel_leq_2_Tree P)
+    {
+        swap(*this,P);
+        return *this;
+    }
+
+    PartialLevel_leq_2_Tree() = delete;
+    // no deault tree!
+
+    PartialLevel_leq_2_Tree(DEGREE & d) :
+        //only defaulted by degree
+        // degree can be ZEAO ONE TWO
+        // deriction can be nevre left
+        tree (Level_leq_2_Tree ()),
+        degree(d),
+        node_minus_1 (nullptr),
+        node_minus_2 (nullptr)
+    {
+        if (d == DEGREE::ZERO){
+            direction = DIRECTION::NA;
+        }
+        if (d == DEGREE::ONE)
+        {
+            direction = DIRECTION::DOWN;
+            node_minus_1 = tree.tree_1.Root();
+        }
+        if (d == DEGREE::TWO)
+        {
+            direction = DIRECTION::DOWN;
+            node_minus_2 = tree.tree_2.Root();
+        }
+    }
+
+    PartialLevel_leq_2_Tree(const PartialLevel_leq_2_Tree & PP) :
+        tree (PP.tree),
+        degree (PP.degree),
+        direction (PP.direction)
+    {
+
+        if (PP.node_minus_1 == nullptr)
+        {
+            node_minus_1 = nullptr;
+        }
+        else
+        {
+            node_minus_1 = tree.tree_1.MyNode(PP.node_minus_1);
+        }
+        if (PP.node_minus_2 == nullptr)
+        {
+            node_minus_2 = nullptr;
+        }
+        else
+        {
+            node_minus_2 = tree.tree_2.MyNode(PP.node_minus_2);
+        }
+    }
+
+    PartialLevel_leq_2_Tree(const Level_leq_2_Tree & P) :
+        // construct a partial level <=2 tree
+        // of degree 0
+        // from a level <= 2 tree
+        tree(P),
+        degree(DEGREE::ZERO),
+        direction (DIRECTION::NA),
+        node_minus_1 (nullptr),
+        node_minus_2 (nullptr) {}
+
+
+    PartialLevel_leq_2_Tree(const Level_leq_2_Tree & P,
+                            const SingleSequence & s) :
+        // construct a partial level <=2 tree
+        // of degree 1
+        // from a level <= 2 tree
+        tree(P),
+        degree(DEGREE::ONE),
+        direction(DIRECTION::DOWN),
+        node_minus_2 (nullptr)
+    {
+        node_minus_1 = tree.tree_1.MyNode(s);
+    }
+
+    PartialLevel_leq_2_Tree(const Level_leq_2_Tree & P,
+                            const DIRECTION & i,
+                            const DoubleSequence & s) :
+        // construct a partial level <=2 tree
+        // of degree 2,
+        // moving down or left, depending on i
+        // from a level <= 2 tree
+        tree(P),
+        degree(DEGREE::TWO),
+        direction(i),
+        node_minus_1 (nullptr)
+    {
+        node_minus_2 = tree.tree_2.MyNodeInDomain(s);
+    }
+
+
+    // degree can be 0, 1, 2
+    DEGREE Degree() const
+    {
+        return degree;
+    }
+
+    DIRECTION Direction() const{
+    return direction;
+    }
+
+    // the level <=2 tree
+    const Level_leq_2_Tree & Tree() const
+    {
+        return tree;
+    }
+
+    // the lvel-1 tree component
+    const LevelOneTree & Tree_1() const
+    {
+        return tree.tree_1;
+    }
+
+    // the level-2 treee component
+    const LevelTwoTree & Tree_2() const
+    {
+        return tree.tree_2;
+    }
+
+    // when degree 1, the node_minus in the level-1 tree
+    LevelOneTreeNode * NodeMinusInTree_1 () const
+    {
+        return node_minus_1;
+    }
+
+    // when degree 2 or 2left, the node minus in the level-2 tree
+    LevelTwoTreeNode * NodeMinusInTree_2 () const
+    {
+        return node_minus_2;
+    }
+
+    // when degree 1, the single sequence
+    SingleSequence NodeMinusSequence_1() const
+    {
+        return Tree_1().EntireEntry(node_minus_1);
+    }
+
+    // when degree 2 or 2left, the double sequence
+    DoubleSequence NodeMinusSequence_2() const
+    {
+        return Tree_2().EntireEntryInDomain(node_minus_2);
+    }
+
+    // when degre 2 or 2left, the final level-1 tree
+    LevelOneTree FinalLevelOneTree() const
+    {
+        if (degree == DEGREE::TWO)
+        {
+            return Tree_2().CreateCompletion(node_minus_2);
+        }
+        else
+        {
+            return Tree_2().TreeValue(node_minus_2);
+        }
+    }
+
+    // the cardinality
+    unsigned long Cardinality() const
+    {
+        return Tree().Cardinality()+1;
+    }
+
+    //  operators
+    bool operator == (const PartialLevel_leq_2_Tree & P) const
+    {
+        if (degree != P.degree)
+        {
+            return false;
+        }
+        if (direction != P.direction){
+            return false;
+        }
+        if (tree != P.tree)
+        {
+            return false;
+        }
+        if (degree == DEGREE::ZERO)
+        {
+            return true;
+        }
+        else if (degree == DEGREE::ONE)
+        {
+            return *node_minus_1 == *P.node_minus_1;
+        }
+        else
+        {
+            return *node_minus_2 == *P.node_minus_2;
+        }
+    }
+    bool operator != (const PartialLevel_leq_2_Tree & P) const
+    {
+        return !(*this == P);
+    }
+
+    // whin degree 1, gives a parital <=1 tree by throwing away
+    //      the level -2 part
+    PartialLevelOneTree Level_leq_1_Component () const
+    {
+        if (degree == DEGREE::ZERO)
+        {
+            return PartialLevelOneTree(Tree_1());
+        }
+        if (degree == DEGREE::ONE)
+        {
+            return PartialLevelOneTree(Tree_1(), node_minus_1);
+        }
+    }
+
+
+//generates a vector of completions
+// of course, empty vector if degree 0
+/*
+    vector<Level_leq_2_Tree> Completions() const
+    {
+        vector<Level_leq_2_Tree> v;
+        if (degree == DEGREE::ONE)
+        {
+            //degree 0, on completion
+            return v;
+        }
+
+        if (degree == DEGREE::ONE)
+        {
+            // degree 1, unuqei completion
+            v.emplace_back( Level_leq_2_Tree(
+                                Level_leq_1_Component().Completion(),
+                                Tree_2()                       ));
+            return v;
+        }
+
+        // now degree 2 or 2left
+        auto P = FinalLevelOneTree();
+
+        auto new_2(Tree_2());
+
+        auto ucf_2 = Tree_2().EntireEntryInDomain(node_minus_2);
+
+        new_2.AddChildBelow(ucf_2);
+
+        v.emplace_back(Level_leq_2_Tree(
+                           Tree_1(),
+                           new_2            ));
+        // degree 0 extention
+
+
+        if (degree == DEGREE::TWO)
+        {
+
+            for (auto i = P.Root()->FirstChild();
+                    i != nullptr;
+                    i = P.NextEnumerate(i)
+                )
+            {
+                new_2 = Tree_2();
+                auto ucf_1 = P.CreateNodeFromUCF(i);
+                new_2.AddChildBelow(ucf_2, ucf_1);
+                v.emplace_back(Level_leq_2_Tree(
+                                   Tree_1(),
+                                   new_2            ));
+            }
+        }
+
+        if (degree == DEGREE::TWOLEFT)
+        {
+
+            for (auto i = P.Root()->FirstChild();
+                    i != nullptr;
+                    i = P.NextEnumerate(i)
+                )
+            {
+                new_2 = Tree_2();
+                auto ucf_1 = P.CreateNodeFromUCF(i);
+                new_2.AddSiblingLeft(ucf_2, ucf_1);
+                v.emplace_back(Level_leq_2_Tree(
+                                   Tree_1(),
+                                   new_2            ));
+            }
+        }
+
+        return v;
+    }*/
+
+    // the partial tree si deg 1
+    // unuqe ciompletion
+    // or degree 2, give the completion of degree 0 at the hanging node
+    //
+    Level_leq_2_Tree Completion() const
+    {
+        if (degree == DEGREE::ONE)
+        {
+            return Level_leq_2_Tree(
+                       Level_leq_1_Component().Completion(),
+                       Tree_2()                       );
+        }
+            auto P = FinalLevelOneTree();
+
+            auto new_2(Tree_2());
+
+            auto ucf_2 = Tree_2().EntireEntryInDomain(node_minus_2);
+
+            new_2.Add(direction,ucf_2);
+
+            return Level_leq_2_Tree(
+                       Tree_1(),
+                       new_2            );
+
+
+    }
+
+
+    // the partial tree has deg 2 or 2l
+    // completion depends on the new ucf on level-2 tree
+    Level_leq_2_Tree Completion(const SingleSequence & ucf_1) const
+    {
+            auto P = FinalLevelOneTree();
+
+            auto new_2(Tree_2());
+
+            auto ucf_2 = Tree_2().EntireEntryInDomain(node_minus_2);
+
+            new_2.Add(direction,ucf_2,ucf_1);
+
+            return Level_leq_2_Tree(
+                       Tree_1(),
+                       new_2            );
+
+    }
+
+
+
+
+
+// only apply to degree 1
+    SingleSequence CreateHangingNode_1() const
+    {
+        return Tree_1().CreateNodeFromUCF(node_minus_1);
+    }
+
+// only apply to degree 2 or 2left
+    DoubleSequence CreateHangingNode_2() const
+    {
+        auto output =  Tree_2().EntireEntryInDomain(node_minus_2);
+        SingleSequence next_entry;
+
+        if (direction == DIRECTION::DOWN)
+        {
+            //degree 2
+            if (node_minus_2->NumberOfChildren() == 0)
+            {
+                next_entry = vector<unsigned long> {0};
+            }
+            else
+            {
+                auto last_child_last_entry = node_minus_2->LastChild()->Entry().first;
+                next_entry = vector<unsigned long> {last_child_last_entry[0]+1};
+            }
+        }
+        else
+        {
+            //degree 2left
+            if (node_minus_2->Left() == nullptr)
+            {
+                next_entry = node_minus_2->Entry().first;
+                next_entry . emplace_back(0);
+            }
+            else
+            {
+                auto left_last_entry = node_minus_2->Left()->Entry().first;
+                auto last_entry = node_minus_2->Entry().first;
+                // maybe left is one-node extension of
+                // maybe not
+                if (IsProperInitialSegment(last_entry, left_last_entry))
+                {
+                    next_entry = left_last_entry;
+                    next_entry.back() += 1;
+                }
+                else
+                {
+                    next_entry = last_entry;
+                    next_entry.emplace_back(0);
+                }
+            }
+        }
+        output.emplace_back(next_entry);
+        return output;
+    }
+
+};
+
+typedef FuncTreeNode <SingleSequence,PartialLevel_leq_2_Tree> LevelThreeTreeNode;
+
+class LevelThreeTree: public FuncTree < SingleSequence, PartialLevel_leq_2_Tree>
+{
+
+
+private:
+    /*
+        //s is a node in the tree
+        // add nodes below s whose domain forms a level-1 tree K
+        void AddNodesBelowFromInput ( const string & name,
+                                      LevelThreeTreeNode * const s,
+                                      const LevelOneTree & K,
+                                      const int & d)
+        {
+
+
+            LevelOneTree  P { Value(s).Completion()};
+
+            vector<SingleSequence> pp;
+
+            //      pp->emplace_back(nullptr);
+
+            for (auto p = P.Root()->first_child; p != nullptr; p = P.NextEnumerate(p))
+            {
+                pp.emplace_back( P.EntireEntry(p));
+            }
+
+            for (auto e = K.SmallestNode(); e != K.Root(); e = e->BKRight())
+            {
+                cout<<endl<<EmptyString(d)<<"Possible values of the node component of "<<name<<" at "
+                    <<K.String(e)<<":"<<endl;
+
+                for (unsigned long i = pp.size(); i!= 0; --i)
+                {
+
+                    auto newnode = P.CreateNodeFromUCF(  pp [i-1]);
+
+                    cout<<EmptyString(d + indent)<< pp.size() - i + 1 << ". "
+                        << ::String(newnode);
+                }
+                cout<<EmptyString(d + indent)<< pp.size() + 1 << ". "
+                    << "-1";
+                cout<<endl<<EmptyString(d)<<"Which one? ";
+                unsigned long k;
+                cin >> k;
+                while(k <= 0 || k > pp.size()+1)
+                {
+                    cout<<EmptyString(d)<< "Error: Out of range! ";
+                    cin>>k;
+                }
+                if (k < pp.size()+1)
+                {
+                    FuncTree<SingleSequence,PartialLevel_leq_2_Tree>::AddChildBelow(s,
+                            K.EntireEntry(e),
+                            PartialLevel_leq_2_Tree (P,
+                                                 pp[pp.size()-k]));
+                }
+                else
+                {
+                    FuncTree<SingleSequence,PartialLevel_leq_2_Tree>::AddChildBelow(s, K.EntireEntry(e), PartialLevel_leq_2_Tree(P));
+                }
+
+            }
+        }
+    */
+
+public:
+
+
+    LevelThreeTree () = default;
+
+    LevelThreeTree(const LevelThreeTree& Q) = default;
+
+    LevelThreeTree(LevelThreeTree && f) :
+        FuncTree<SingleSequence,PartialLevel_leq_2_Tree>(std::move(f)) {}
+
+
+    LevelThreeTree& operator=(LevelThreeTree T)
+    {
+        swap (*this, T);
+        return *this;
+    }
+
+
+    ~LevelThreeTree() = default;
+
+
+
+    string StringTree(const unsigned long interval, const unsigned long head) const;
+
+    //the degree of the partial level <=2 tree Q(s)
+    // 0,1,2
+    DEGREE Degree(const LevelThreeTreeNode * const s) const
+    {
+        return Value(s).Degree();
+    }
+
+    DIRECTION Direction(const LevelThreeTreeNode * const s) const
+    {
+        return Value(s).Direction();
+    }
+    DEGREE Degree(const DoubleSequence & s) const
+    {
+        return Value(MyNodeInDomain(s)).Degree();
+    }
+
+    DIRECTION Direction(const DoubleSequence & s) const
+    {
+        return Value(MyNodeInDomain(s)).Direction();
+    }
+
+
+    /*
+        //input the tree
+        void Input(const string name = "", const unsigned long d = 0)
+        {
+
+
+            LevelThreeTreeNode * current = Root();
+
+            while (true)
+            {
+                string nodename = ::String(EntireEntryInDomain(current));
+
+
+                LevelOneTree  K ;
+
+                if (Degree(current) == DEGREE::ZERO)
+                {
+                    cout<<EmptyString(d)<<nodename<<" has degree 0. It must be terminal"<<endl;
+                }
+                else
+                {
+                    string level_1_tree_name = name+"{"+ nodename +"}";
+                    cout<<EmptyString(d)<<"Immediate successors of " <<name<<" at "
+                        <<StringInDomain(current)
+                        <<" forms a level-1 tree "<<level_1_tree_name  <<" :"<<endl;
+
+
+                    cout<<endl;
+                    K.Input(level_1_tree_name ,d + indent);
+                    cout<<endl;
+                }
+
+                if (K.IsTrivial())
+                {
+                    if (current->IsEmpty())
+                    {
+                        cout<<EmptyString(d)<<"Level-2 tree "<<name<<" input complete!"<<endl;
+                        return;
+                    }
+                    while (current->IsLastBitRightMost())
+                    {
+                        current = current->parent;
+                        if (current->IsEmpty())
+                        {
+                            cout<<EmptyString(d)<<"Level-2 tree "<<name<<" input complete!"<<endl;
+                            return;
+                        }
+                    }
+                    current = current->right;
+                }
+                else
+                {
+                    AddNodesBelowFromInput(name, current, K,d);
+                    current = current->first_child;
+                }
+            }
+        }*/
+
+    //the tree component of Q(s)
+    const Level_leq_2_Tree & TreeValue(const DoubleSequence & s) const
+    {
+        return Value(s).Tree();
+    }
+    const Level_leq_2_Tree & TreeValue(const LevelThreeTreeNode * const s) const
+    {
+        return Value(s).Tree();
+    }
+
+/*
+    //the completion node of Q(s)
+    vector<Level_leq_2_Tree> CreateCompletions (const DoubleSequence & s) const
+    {
+        return Value(s).Completions();
+    }
+    vector<Level_leq_2_Tree> CreateCompletions (const LevelThreeTreeNode * const s) const
+    {
+        return Value(s).Completions();
+    }*/
+
+
+    // s has degree 1, so the value has a unique completion
+    // the new node has degree 0
+    // add a node , eithe child of s or an elder sister of s
+    LevelThreeTreeNode *  Add_10( const DIRECTION & i,
+                                 LevelThreeTreeNode * const s)
+    {
+        auto completion = Value(s).Completion();
+        auto new_partial_tree = PartialLevel_leq_2_Tree(completion);
+
+        return ::Add(i,*this,s,new_partial_tree);
+    }
+
+    LevelThreeTreeNode *  Add_10(const DIRECTION & i,
+                                const DoubleSequence & s)
+    {
+        return Add_10(i,this->MyNodeInDomain(s));
+    }
+
+
+    // s has degree 1, so the value has a unique completion
+    // the new node has degree 1, with ucf ucf_31
+    //add a node , eithe child of s or an elder sister of s
+    LevelThreeTreeNode *  Add_11(const DIRECTION & i,
+                                LevelThreeTreeNode * const s,
+                                          const SingleSequence & ucf_31)
+    {
+        auto completion = Value(s).Completion();
+        auto new_partial_tree = PartialLevel_leq_2_Tree(completion,ucf_31);
+
+        return ::Add(i,*this,s, new_partial_tree);
+    }
+
+    LevelThreeTreeNode *  Add_11(const DIRECTION & i,
+                                const DoubleSequence & s,
+                                          const SingleSequence & ucf_31)
+    {
+        return Add_11(i,this->MyNodeInDomain(s),ucf_31);
+    }
+
+
+    // s has degree 1, so the value has a unique completion
+    // the new node has degree d, with ucf ucf_32
+    //add a node , eithe child of s or an elder sister of s
+    LevelThreeTreeNode *  Add_12(const DIRECTION & i3,
+                                LevelThreeTreeNode * const s,
+                                          const DIRECTION & i2,
+                                          const DoubleSequence & ucf_32)
+    {
+        auto completion = Value(s).Completion();
+        auto new_partial_tree = PartialLevel_leq_2_Tree(completion,i2,ucf_32);
+
+        return ::Add(i3,*this,s, new_partial_tree);
+    }
+    LevelThreeTreeNode *  Add_12(const DIRECTION & i3,
+                                const DoubleSequence & s,
+                                          const DIRECTION & i2,
+                                          const DoubleSequence & ucf_32)
+    {
+        return Add_12(i3,this->MyNodeInDomain(s),i2,ucf_32);
+    }
+
+
+    // s has degree 2,
+    // need to complete the tree by making degree 0 in the hanging node
+    //      in the level-2 part
+    // the new node has degree 0
+    //add a node , eithe child of s or an elder sister of s
+    LevelThreeTreeNode *  Add_200(const DIRECTION & i3,
+                                LevelThreeTreeNode * const s)
+
+    {
+        auto completion = Value(s).Completion();
+        auto new_partial_tree = PartialLevel_leq_2_Tree(completion);
+
+        return ::Add(i3,*this,s, new_partial_tree);
+    }
+
+    LevelThreeTreeNode *  Add_200( const DIRECTION & i3,
+                                const DoubleSequence & s)
+    {
+        return Add_200(i3,this->MyNodeInDomain(s));
+    }
+
+    // s has degree 2,
+    // need to complete the tree by making degree 0 in the hanging node
+    //      in the level-2 part
+    // the new node has degree 1, with ucf ucf_31
+    //add a node , eithe child of s or an elder sister of s
+    LevelThreeTreeNode *  Add_201(const DIRECTION & i3,
+                                LevelThreeTreeNode * const s,
+                                            const SingleSequence & ucf_31)
+
+    {
+        auto completion = Value(s).Completion();
+        auto new_partial_tree = PartialLevel_leq_2_Tree(completion, ucf_31);
+
+        return ::Add(i3,*this,s, new_partial_tree);
+    }
+
+    LevelThreeTreeNode *  Add_201( const DIRECTION & i3,
+                                const DoubleSequence & s,
+                                            const SingleSequence & ucf_31)
+    {
+        return Add_201(i3,this->MyNodeInDomain(s), ucf_31);
+    }
+
+    // s has degree 2,
+    // need to complete the tree by making degree 0 in the hanging node
+    //      in the level-2 part
+    // the new node has degree 2, with ucf ucf_32
+    //add a node , eithe child of s or an elder sister of s
+    LevelThreeTreeNode *  Add_202(const DIRECTION & i3,
+                                LevelThreeTreeNode * const s,
+                                            const DIRECTION & i2,
+                                            const DoubleSequence & ucf_32)
+
+    {
+        auto completion = Value(s).Completion();
+        auto new_partial_tree = PartialLevel_leq_2_Tree(completion, i2, ucf_32);
+
+        return ::Add(i3,*this,s, new_partial_tree);
+    }
+
+    LevelThreeTreeNode *  Add_202( const DIRECTION & i3,
+                                const DoubleSequence & s,
+                                            const DIRECTION & i2,
+                                            const DoubleSequence & ucf_32)
+    {
+        return Add_202(i3,this->MyNodeInDomain(s), i2, ucf_32);
+    }
+
+
+    // s has degree 2,
+    // need to complete the tree by making degree 1 in the hanging node
+    //      in the level-2 part, with ucf ucf_21
+    // the new node has degree 0
+    //add a node , eithe child of s or an elder sister of s
+    LevelThreeTreeNode *  Add_210(const DIRECTION & i3,
+                                LevelThreeTreeNode * const s,
+                                        const SingleSequence & ucf_21)
+    {
+        auto completion = Value(s).Completion(ucf_21);
+        auto new_partial_tree = PartialLevel_leq_2_Tree(completion);
+
+        return ::Add(i3,*this,s, new_partial_tree);
+    }
+
+    LevelThreeTreeNode *  Add_210( const DIRECTION & i3,
+                                const DoubleSequence & s,
+                                        const SingleSequence & ucf_21)
+    {
+        return Add_210(i3,this->MyNodeInDomain(s),ucf_21);
+    }
+
+    // s has degree 2,
+    // need to complete the tree by making degree 0 in the hanging node
+    //      in the level-2 part
+    // the new node has degree 1, with ucf ucf_31
+    //add a node , eithe child of s or an elder sister of s
+    LevelThreeTreeNode *  Add_211(const DIRECTION & i3,
+                                LevelThreeTreeNode * const s,
+                        const  SingleSequence & ucf_31 )
+
+    {
+        auto completion = Value(s).Completion();
+        auto new_partial_tree = PartialLevel_leq_2_Tree(completion, ucf_31);
+
+        return ::Add(i3,*this,s, new_partial_tree);
+    }
+
+    LevelThreeTreeNode *  Add_211( const DIRECTION & i3,
+                                const DoubleSequence & s,
+                                           const SingleSequence & ucf_31)
+    {
+        return Add_211(i3,this->MyNodeInDomain(s), ucf_31);
+    }
+
+
+    // s has degree 2,
+    // need to complete the tree by making degree 1 in the hanging node
+    //      in the level-2 part, with ucf ucf_21
+    // the new node has degree 2, with degree d and ucf ucf_32
+    //add a node , eithe child of s or an elder sister of s
+    LevelThreeTreeNode *  Add_212(const DIRECTION & i3,
+                                LevelThreeTreeNode * const s,
+                                            const SingleSequence & ucf_21,
+                                          const DIRECTION & i2,
+                                        const DoubleSequence & ucf_32)
+    {
+        auto completion = Value(s).Completion(ucf_21);
+        auto new_partial_tree = PartialLevel_leq_2_Tree(completion,i2,ucf_32);
+
+        return ::Add(i3,*this,s, new_partial_tree);
+    }
+
+    LevelThreeTreeNode *  Add_212( const DIRECTION & i3,
+                                const DoubleSequence & s,
+                                            const SingleSequence & ucf_21,
+                                          const DIRECTION & i2,
+                                        const DoubleSequence & ucf_32)
+    {
+        return Add_212(i3,this->MyNodeInDomain(s),ucf_21,i2,ucf_32);
+    }
+
+};
+
+
 
 
 

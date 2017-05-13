@@ -27,12 +27,14 @@ int main()
 //FuncTreeNode<TreeNode<TreeNode<int>>, string> d;
 //cout<<"test size"<<sizeof(d)<<endl;
 
-    Level_leq_2_Tree T;
-    T.Input("T");
- //   Level_leq_2_Tree Q;
-  //  Q.Input("Q");
+    Level_leq_2_Tree X;
+    X.Input("X");
+    Level_leq_2_Tree T (X);
+  //  T.Input("T");
+    Level_leq_2_Tree Q (X);
+ //   Q.Input("Q");
  //   LevelOneTree W;
-   // W.Input("W");
+ //   W.Input("W");
 
 
     cout<<"starting computing tensor product"<<endl;
@@ -51,7 +53,7 @@ int main()
     }*/
     cout<<"*************"<<endl;
 
-    auto sigma2 = TensorProduct(T,TensorProduct(T,T).domain);
+    auto sigma2 = TensorProduct(X,TensorProduct(T,Q).Domain());
 
 
     cout<<"number of desc: "<<sigma2.Cardinality()<<endl;
@@ -69,10 +71,10 @@ int main()
 
 
     cout<<"starting computing tensor product"<<endl;
-    auto t3 = Clock::now();
+ /*   auto t3 = Clock::now();
 
 
- /*   shared_ptr<Level_21_Desc> D = make_shared<Level_21_Desc> (Level_21_Desc());
+    shared_ptr<Level_21_Desc> D = make_shared<Level_21_Desc> (Level_21_Desc());
 
     while (D!= nullptr)
     {
@@ -81,12 +83,13 @@ int main()
                 D = BKLeft(D, T, Q);
 
     }*/
+    /*
     cout<<"*************"<<endl;
 
     auto sigma3 = TensorProduct(TensorProduct(T,T).domain,T);
 
 
-    cout<<"number of desc: "<<sigma3.Cardinality()<<endl;
+    cout<<"number of desc: "<<sigma3.Cardinality()<<endl
    // cout<<"number of desc: "<<i<<endl;
 
 
@@ -97,7 +100,7 @@ int main()
 
     std::cout << "It took "
               << mytime
-              << " seconds" << std::endl;
+              << " seconds" << std::endl;*/
 
 
 //P.Show();
