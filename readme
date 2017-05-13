@@ -1,4 +1,7 @@
 # Higher-sharp
 Compute the combinatorics in my paper
 
+compiles with gcc 4.8.4 with c++11 option
+
 I got annoyed of the slowness and bugs arising from non-type-checking of python. So I switch to C++11 halfway. The new features in C++11 seems nice.
+
