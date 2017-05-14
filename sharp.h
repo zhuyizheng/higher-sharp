@@ -5200,7 +5200,7 @@ public:
 
         for (auto && i : D.enumeration)
         {
-            enumeration.emplace_back(factor.MyNodeInDomain(D.factor.EntireEntryInDomain( D.ucf_at_domain_node)));
+            enumeration.emplace_back(factor.MyNodeInDomain(D.factor.EntireEntryInDomain( i)));
         }
     }
 
