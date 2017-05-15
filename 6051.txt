@@ -7,6 +7,14 @@ the ordinal represented modulo (club measure on \omega_1)^2 by the function
 	(a,c) |---> \sup_{b<a} f(a,c,b)
 belongs A.
 
+In other words, \mu is induced by the following level-2 tree of cardinality 3:
+
+
+(0)
++-------(0 0)
+	+-------(0 1)
+	
+
 Then j^\mu \circ j^\mu is equal to a single ultrapower map induced by the following level-2 tree of cardinality 6051.
 
 (0)
