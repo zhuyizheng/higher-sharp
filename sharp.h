@@ -115,11 +115,6 @@ FinalTreeWithNode;
 
 class Level_322_Desc;
 
-typedef FuncTreeNode <SingleSequence, Level_322_Desc>
-Level_332_FactorNode;
-
-typedef FuncTree <SingleSequence, Level_322_Desc> Level_332_Factor;
-
 string String (const Level_21_Desc & D);
 
 constexpr Level_leq_2_TreeNode
@@ -137,6 +132,18 @@ zero_leq_2_Sequence = leq_2_Sequence
     SingleSequence(),
     DoubleSequence(),
 };
+
+
+constexpr Level_222_FactorNode
+zeroLevel_leq_2_FactorNode = Level_222_FactorNode
+{
+    DEGREE::ZERO,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr
+};
+
 
 
 template <typename T>
@@ -1610,9 +1617,9 @@ FuncTreeNode<SingleSequence, VALUETYPE> * AddSiblingLeft (
 //
 template <typename VALUETYPE, typename A>
 FuncTreeNode<SingleSequence, VALUETYPE> * Add (
-    const DIRECTION i,
     FuncTree<SingleSequence, VALUETYPE> & f,
     FuncTreeNode<SingleSequence, VALUETYPE> * const s,
+    const DIRECTION i,
     A && new_in_image)
 {
 
@@ -1629,12 +1636,12 @@ FuncTreeNode<SingleSequence, VALUETYPE> * Add (
 
 template <typename VALUETYPE, typename A>
 FuncTreeNode<SingleSequence, VALUETYPE> * Add (
-    const DIRECTION i,
     FuncTree<SingleSequence, VALUETYPE> & f,
     const vector<SingleSequence> & s,
+    const DIRECTION i,
     A && new_in_image)
 {
-    return Add (i, f, f.MyNodeInDomain (s) , std::forward<A> (new_in_image) );
+    return Add (f, f.MyNodeInDomain (s) , i, std::forward<A> (new_in_image) );
 }
 
 class LevelOneTree : public Tree<unsigned long>
@@ -2206,8 +2213,8 @@ public:
 
     // the new node has degree 0
     // add
-    LevelTwoTreeNode *  Add (const DIRECTION & direction,
-                             LevelTwoTreeNode * const s)
+    LevelTwoTreeNode *  Add (LevelTwoTreeNode * const s,
+                             const DIRECTION & direction)
     {
         if (direction == DIRECTION::DOWN)
             return AddChildBelow (s);
@@ -2215,17 +2222,17 @@ public:
             return AddSiblingLeft (s);
     }
 
-    LevelTwoTreeNode *  Add (const DIRECTION & direction,
-                             const DoubleSequence & s)
+    LevelTwoTreeNode *  Add (const DoubleSequence & s,
+                             const DIRECTION & direction)
     {
-        return Add (direction, this->MyNodeInDomain (s) );
+        return Add (this->MyNodeInDomain (s) , direction);
     }
 
 
     // the new node has degree 1
     // add an elder sister on the left
-    LevelTwoTreeNode *  Add (const DIRECTION & direction,
-                             LevelTwoTreeNode * const s,
+    LevelTwoTreeNode *  Add (LevelTwoTreeNode * const s,
+                             const DIRECTION & direction,
                              const SingleSequence & u)
     {
         if (direction == DIRECTION::DOWN)
@@ -2233,16 +2240,16 @@ public:
         else
             return AddSiblingLeft (s, u);
     }
-    LevelTwoTreeNode *  Add (const DIRECTION & direction,
-                             const DoubleSequence & s,
+    LevelTwoTreeNode *  Add (const DoubleSequence & s,
+                             const DIRECTION & direction,
                              const SingleSequence & u)
     {
-        return Add (direction, this->MyNodeInDomain (s), u);
+        return Add (this->MyNodeInDomain (s), direction, u);
     }
 
 
     FinalTreeWithNode CreateFinalTreeWithNodeFromUCF (
-        const LevelTwoTreeNode * s,
+        const LevelTwoTreeNode * const s,
         const DIRECTION & i) const
     {
         if (i == DIRECTION::DOWN)
@@ -2260,8 +2267,43 @@ public:
     {
         return CreateFinalTreeWithNodeFromUCF (MyNodeInDomain (s), i);
     }
+
+    LevelOneTree ToBeExtended (const LevelTwoTreeNode * const s,
+                               const DIRECTION & i) const
+    {
+
+        if (i == DIRECTION::DOWN)
+        {
+            return Value (s).Tree();
+        }
+        else
+        {
+            return Value (s->Parent() ).Tree();
+        }
+    }
+
+    FinalTreeWithNode PresentFinalTreeWithNode (const LevelTwoTreeNode * s) const
+    {
+        if (s->Right() != nullptr)
+        {
+            return CreateFinalTreeWithNodeFromUCF (s->Parent(),
+                                                   DIRECTION::LEFT);
+        }
+        else
+        {
+            return CreateFinalTreeWithNodeFromUCF (s,
+                                                   DIRECTION::DOWN);
+        }
+    }
+    // s is never empty node in this funciton
 };
 
+// make P a copy of Q
+void MakeCopy (FinalTreeWithNode & P, const FinalTreeWithNode & Q)
+{
+    P.first = Q.first;
+    P.second = P.first.MyNode (Q.first.EntireEntry (Q.second) );
+}
 
 // is s the BK pred of t?
 // s,t are alraedy in W
@@ -2523,7 +2565,7 @@ public:
     // defalut if degree 1
     // we don't care anyway if degeree 1
 
-private:
+public:
     vector<FuncTreeNode<unsigned long, A>*> enumeration;
     // the enumeratin of the domain of factor according to the order by level-2 tree
 
@@ -3030,6 +3072,23 @@ public:
         return factor.Value (ucf_at_domain);
     }
 
+    bool IsContinuousType (const LevelOneTree & W) const
+    {
+        if (degree == DEGREE::ONE)
+        {
+            return false;
+        }
+        if (IsDiscontinuousTypeAtDomain() )
+        {
+            return false;
+        }
+        return UCF_As21Desc().IsContinuousType_Star (W);
+    }
+
+    bool IsDiscontinuousType (const LevelOneTree & W) const
+    {
+        return ! IsContinuousType (W);
+    }
 
     bool IsContinuousType_Star_As21Desc (const Level_leq_2_Tree & Q,
                                          const LevelOneTree & W) const
@@ -3279,7 +3338,7 @@ void MoveToBKLeft (Level_21_Desc & D,
 void MoveToLeft (const Level_21_Desc & D,
                  Level_21_Desc & D_prime,
                  const Level_leq_2_Tree & Q,
-                 const LevelOneTree & W,
+                 //               const LevelOneTree & W,
                  const LevelOneTree & W_prime,
                  const LevelOneTreeNode * w)
 {
@@ -3415,7 +3474,7 @@ void MoveToLeftCandidate (const Level_221_Desc & C,
                           Level_221_Desc & C_prime,
                           const Level_leq_2_Tree &           T,
                           const Level_leq_2_Tree &           Q,
-                          const LevelOneTree & W,
+                          //                      const LevelOneTree & W,
                           const LevelOneTree & W_prime,
                           const LevelOneTreeNode * w)
 {
@@ -3441,7 +3500,7 @@ void MoveToLeftCandidate (const Level_221_Desc & C,
 
         Level_21_Desc critical_left (STATE::INVALID);
 
-        MoveToLeft (critical_21_desc, critical_left, Q, W, W_prime, w);
+        MoveToLeft (critical_21_desc, critical_left, Q,  W_prime, w);
         //the next smaller desc
         /*
                 if (critical_left == nullptr)
@@ -3518,7 +3577,7 @@ void MoveToLeftCandidate (const Level_221_Desc & C,
             // need to find another D'<D, good transitioning extension
             //
             auto && bound_in_C =  C.UCF_As21Desc();
-            MoveToLeft (bound_in_C, critical_21_desc, Q, W, W_prime, w);
+            MoveToLeft (bound_in_C, critical_21_desc, Q,  W_prime, w);
             if (critical_21_desc.state == STATE::INVALID)
             {
                 //squeezed out
@@ -3545,7 +3604,6 @@ void MoveToLeftCandidate (const Level_221_Desc & C,
         {
             //find the biggest extension
             auto && extend_node_in_T2 = node_in_T2->BKLeft();
-
 
             if (T2.Degree (extend_node_in_T2) == DEGREE::ZERO)
             {
@@ -3633,7 +3691,7 @@ void MoveToLeftCandidate (const Level_221_Desc & C,
 
 
 
-//given C, a (T,Q,W)-desc whose ucf at W is w,
+//given C, a (T,Q,(W,w-)-desc
 // W' is the completion of (W,w), w is the hanging node in W'\w
 // C' is a candidate (T,Q,W')-desc, produced by the MoveToLeftCandidate function, good at transition
 //verify if C' is a (T,Q,W')-desc
@@ -3642,7 +3700,7 @@ bool Validate (const Level_221_Desc &     C,
                const Level_221_Desc &     C_prime,
                const Level_leq_2_Tree &  T,
                const Level_leq_2_Tree &  Q,
-               const LevelOneTree & W,
+               //           const LevelOneTree & W,
                const LevelOneTree & W_prime,
                const LevelOneTreeNode * w)
 {
@@ -3655,7 +3713,7 @@ bool Validate (const Level_221_Desc &     C,
 
     auto && T2 = T.tree_2;
 
-    auto && node_in_T2 = T2.MyNodeInDomain (C_prime.GetSequence_2() );
+    //  auto && node_in_T2 = T2.MyNodeInDomain (C_prime.GetSequence_2() );
 
     if (C_prime.IsDiscontinuousTypeAtDomain() )
     {
@@ -3671,13 +3729,16 @@ bool Validate (const Level_221_Desc &     C,
         return true;
     }
 
-    //now C' is C_effective_part plus (D, -1)
-    // we need to make sure of the well-behavior of D
-
-    //if last value is not w, then w must have shown before
     auto && last_node_in_C_prime = C_prime.LastNodeInDomain();
     auto && critical_desc = C_prime.GetFactor().Value (last_node_in_C_prime);
     auto && critical_factor = critical_desc.GetFactor();
+
+    //now C' is C_effective_part plus (D, -1)
+    // we need to make sure of the well-behavior of D
+
+    if (critical_desc.IsDiscontinuousTypeAtDomain() )
+        return true;
+
 
     auto && last_node = critical_desc.LastNodeInDomain();
     auto && last_value = critical_factor.Value (last_node);
@@ -3687,9 +3748,8 @@ bool Validate (const Level_221_Desc &     C,
     }
 
     //otherwise, last value is w
-    //then critical_desc must discontinuous
-    return critical_desc.IsDiscontinuousTypeAtDomain();
-
+    //then
+    return false;
 }
 
 
@@ -3703,7 +3763,7 @@ void MoveToLeft (const Level_221_Desc &     C,
                  Level_221_Desc &     C_prime,
                  const Level_leq_2_Tree &  T,
                  const Level_leq_2_Tree &  Q,
-                 const LevelOneTree &      W,
+                 //              const LevelOneTree &      W,
                  const LevelOneTree & W_prime,
                  const LevelOneTreeNode * w)
 {
@@ -3737,7 +3797,7 @@ void MoveToLeft (const Level_221_Desc &     C,
         }*/
 
 
-    MoveToLeftCandidate (C, C_prime, T, Q, W, W_prime, w);
+    MoveToLeftCandidate (C, C_prime, T, Q,  W_prime, w);
 
     do
     {
@@ -3747,14 +3807,14 @@ void MoveToLeft (const Level_221_Desc &     C,
         }
         //hit the wall. no more
 
-        if (Validate (C, C_prime, T, Q, W, W_prime, w) )
+        if (Validate (C, C_prime, T, Q,  W_prime, w) )
         {
             return;
             //validated, retun the current desc
         }
         // if not validated, continue searching
 
-        MoveToLeftCandidate (C, C_prime, T, Q, W, W_prime, w);
+        MoveToLeftCandidate (C, C_prime, T, Q,  W_prime, w);
         //move left
     }
     while (true);
@@ -3852,6 +3912,10 @@ public:
 
     leq_2_Sequence EntireEntryInDomain (const Level_222_FactorNode & s) const
     {
+        if (Degree (s) == DEGREE::ZERO)
+        {
+            return zero_leq_2_Sequence;
+        }
         if (Degree (s) == DEGREE::ONE)
         {
             return leq_2_Sequence (
@@ -3871,6 +3935,10 @@ public:
 
     Level_222_FactorNode MyNodeInDomain (const leq_2_Sequence & s) const
     {
+        if (std::get<0> (s) == DEGREE::ZERO)
+        {
+            return zeroLevel_leq_2_FactorNode;
+        }
 
         if (std::get<0> (s) == DEGREE::ONE)
         {
@@ -3880,6 +3948,7 @@ public:
             return MyNodeInDomain (std::get<2> (s) );
     }
 
+private:
     Level_222_FactorNode MyNodeInDomain (const SingleSequence & s) const
     {
 
@@ -3907,7 +3976,7 @@ public:
                ;
     }
 
-
+public:
     // is it continuous at (i,s), viewed as a map factoing
     //      into T \otimes Q?
     //
@@ -3915,9 +3984,13 @@ public:
     //
     bool IsContinuous (const Level_leq_2_Tree & T,
                        const Level_leq_2_Tree & Q,
-                       const DIRECTION & i,
-                       const Level_222_FactorNode & s) const
+                       const Level_222_FactorNode & s,
+                       const DIRECTION & i) const
     {
+        if (Degree (s) == DEGREE::ZERO)
+        {
+            return true;
+        }
 
         if (Degree (s) == DEGREE::ONE)
         {
@@ -3948,22 +4021,23 @@ public:
 
         // now s has degree 2
 
-        auto && node = NodeInFactor_2 (s);
+        auto && node_in_factor_2 = NodeInFactor_2 (s);
+        auto && node_in_tree_2 = NodeInTree_2 (s);
 
         // by our assumption, if s is root then going down
 
         if (i == DIRECTION::LEFT)
         {
             // the ucf is going left, s must be not root
-            auto && desc = factor_2.Value (NodeInFactor_2 (s) );
-            auto && desc_parent = factor_2.Value (NodeInFactor_2 (s)->Parent() );
+            auto && desc = factor_2.Value (node_in_factor_2 );
+            auto && desc_parent = factor_2.Value (node_in_factor_2->Parent() );
             // the image 221 desc and its parent
 
-            auto && Ww = domain.tree_2.Value (NodeInTree_2 (s)->Parent() );
+            auto && Ww = domain.tree_2.Value (node_in_tree_2->Parent() );
             // the partial tree at the parent  of s
             // from this, we compute W and W_plus
 
-            auto && W = Ww.Tree();
+            //         auto && W = Ww.Tree();
 
             auto && Ww_plus = Ww.CompletionWithNode ();
 
@@ -3971,7 +4045,7 @@ public:
             auto && w = Ww_plus.second;
 
             auto left = desc;
-            MoveToLeft (desc_parent, left, T, Q, W, W_plus, w);
+            MoveToLeft (desc_parent, left, T, Q,  W_plus, w);
             // move to the left ,  having same parent
 
             if (left.state == STATE::INVALID)
@@ -4000,14 +4074,14 @@ public:
             auto && Ww = domain.tree_2.Value (NodeInTree_2 (s) );
             // the partial tree at s
             // from this, we compute W and W_plus
-            auto && W = Ww.Tree();
+            //        auto && W = Ww.Tree();
 
             auto && Ww_plus = Ww.CompletionWithNode ();
 
             auto && W_plus = Ww_plus.first;
             auto && w = Ww_plus.second;
 
-            MoveToLeft (desc, left, T, Q, W, W_plus, w);
+            MoveToLeft (desc, left, T, Q,  W_plus, w);
 
             if (left.state == STATE::INVALID)
             {
@@ -4033,20 +4107,76 @@ public:
 
 
     template <typename A>
-    Level_222_FactorNode Add (const leq_2_Sequence & s,
+    Level_222_FactorNode Add (const Level_222_FactorNode & s,
                               A && y)
     // s is degree 1,
     // add below s, with value y, as a 21-desc
     {
-        auto && single_sequence = std::get<1> (s);
-
-        auto && new_node_in_tree = domain.tree_1.AddChildBelow (single_sequence);
-        auto && new_node_in_factor = AddChildBelow (factor_1, single_sequence, std::forward<A> (y) );
+        auto && new_node_in_tree = domain.tree_1.AddChildBelow (NodeInTree_1 (s) );
+        auto && new_node_in_factor = AddChildBelow (factor_1, NodeInFactor_1 (s), std::forward<A> (y) );
         return Level_222_FactorNode (DEGREE::ONE,
                                      new_node_in_tree,
                                      new_node_in_factor,
                                      nullptr,
                                      nullptr);
+    }
+
+    template <typename A>
+    Level_222_FactorNode Add (const Level_222_FactorNode & s,
+                              const DIRECTION & i,
+                              PartialLevelOneTree && P,
+                              A && y)
+    // s is degree 2,
+    // add below s, with value y, as a 221-desc
+    {
+        auto && new_node_in_tree = ::Add (domain.tree_2,  NodeInTree_2 (s), i, std::move (P) );
+        auto && new_node_in_factor = ::Add (factor_2, NodeInFactor_2 (s), i, std::forward<A> (y) );
+        return Level_222_FactorNode (DEGREE::TWO,
+                                     nullptr,
+                                     nullptr,
+                                     new_node_in_tree,
+                                     new_node_in_factor
+                                    );
+    }
+
+    template <typename A>
+    Level_222_FactorNode Add (const Level_222_FactorNode & s,
+                              const DIRECTION & i,
+                              A && y)
+    // s is degree 2,
+    // add below s, with value y, as a 221-desc
+    // the partial tree to extend has degree 0 at the extre node
+    {
+        auto && N = domain.tree_2.CreateFinalTreeWithNodeFromUCF (NodeInTree_2 (s) , i);
+        auto && P = PartialLevelOneTree (std::move (N).first);
+        // maybe we can import the rvale of N ??
+        return Add (s, i, std::move (P), std::forward<A> (y) );
+    }
+
+    template <typename A>
+    Level_222_FactorNode Add (const Level_222_FactorNode & s,
+                              const DIRECTION & i,
+                              const SingleSequence & s1,
+                              A && y)
+    // s is degree 2,
+    // add below s, with value y, as a 221-desc
+    // the partial tree to extend has degree 1 at the extre node
+    // with ucf s1
+    {
+        auto && N = domain.tree_2.CreateFinalTreeWithNodeFromUCF ( NodeInTree_2 (s), i );
+        auto && P = PartialLevelOneTree (std::move (N).first, s1);
+        return Add (s, i, std::move (P), std::forward<A> (y) );
+    }
+
+//=====================================
+
+    template <typename A>
+    Level_222_FactorNode Add (const leq_2_Sequence & s,
+                              A && y)
+    // s is degree 1,
+    // add below s, with value y, as a 21-desc
+    {
+        return Add (MyNodeInDomain (s), std::forward<A> (y) );
     }
 
     template <typename A>
@@ -4057,15 +4187,7 @@ public:
     // s is degree 2,
     // add below s, with value y, as a 221-desc
     {
-        auto && double_sequence = std::get<2> (s);
-        auto && new_node_in_tree = ::Add (i, domain.tree_2, double_sequence, std::move (P) );
-        auto && new_node_in_factor = ::Add (i, factor_2, double_sequence, std::forward<A> (y) );
-        return Level_222_FactorNode (DEGREE::TWO,
-                                     nullptr,
-                                     nullptr,
-                                     new_node_in_tree,
-                                     new_node_in_factor
-                                    );
+        return Add (MyNodeInDomain (s), i, P, std::forward<A> (y) );
     }
 
     template <typename A>
@@ -4076,10 +4198,7 @@ public:
     // add below s, with value y, as a 221-desc
     // the partial tree to extend has degree 0 at the extre node
     {
-        auto && N = domain.tree_2.CreateFinalTreeWithNodeFromUCF (std::get<2> (s) , i);
-        auto && P = PartialLevelOneTree (N);
-        // maybe we can import the rvale of N ??
-        return Add (i, s, std::move (P), std::forward<A> (y) );
+        return Add (MyNodeInDomain (s), i, std::forward<A> (y) );
     }
 
     template <typename A>
@@ -4092,9 +4211,7 @@ public:
     // the partial tree to extend has degree 1 at the extre node
     // with ucf s1
     {
-        auto && N = domain.tree_2.CreateFinalTreeWithNodeFromUCF ( std::get<2> (s) , i );
-        auto && P = PartialLevelOneTree (N, s1);
-        return Add (i, s, std::move (P), std::forward<A> (y) );
+        return Add (MyNodeInDomain (s), i, s1, std::forward<A> (y) );
     }
 
 
@@ -4148,7 +4265,7 @@ public:
             return;
         }
 
-        auto && w_entry = W.EntireEntry (w_node);
+        //     auto && w_entry = W.EntireEntry (w_node);
 
         auto && Ww_prime = X2.CreateFinalTreeWithNodeFromUCF (n_tree,
                            DIRECTION::DOWN);
@@ -4160,7 +4277,7 @@ public:
 
         Level_221_Desc prev_desc (STATE::INVALID);
 
-        MoveToLeft (C, prev_desc, T, Q, W, W_prime, w);
+        MoveToLeft (C, prev_desc, T, Q,  W_prime, w);
         // try to build a child
 
         if (prev_desc.state == STATE::INVALID)
@@ -4200,7 +4317,7 @@ public:
         // find new children, add to the left
         do
         {
-            MoveToLeft (C, prev_desc, T, Q, W, W_prime, w);
+            MoveToLeft (C, prev_desc, T, Q,  W_prime, w);
             if (prev_desc.state == STATE::INVALID)
             {
                 //reached the end, break,
@@ -4239,7 +4356,15 @@ public:
     }
 };
 
-
+// applies to degr 2 only
+Level_222_FactorNode Parent (const Level_222_FactorNode & s)
+{
+    return Level_222_FactorNode (DEGREE::TWO,
+                                 nullptr,
+                                 nullptr,
+                                 NodeInTree_2 (s)->Parent(),
+                                 NodeInFactor_2 (s)->Parent() );
+}
 
 
 
@@ -4613,8 +4738,8 @@ public:
 
     Level_leq_2_Tree    tree;
 
-    DIRECTION           direction;
     Level_leq_2_TreeNode node_minus;
+    DIRECTION           direction;
 
     FinalTreeWithNode   final_tree_with_node;
 
@@ -4671,24 +4796,26 @@ public:
     {
         if (d == DEGREE::ZERO)
         {
-            direction = DIRECTION::NA;
             node_minus = zeroLevel_leq_2_TreeNode;
+            direction = DIRECTION::NA;
             final_tree_with_node = FinalTreeWithNode (LevelOneTree(), nullptr);
         }
         if (d == DEGREE::ONE)
         {
-            direction = DIRECTION::DOWN;
             node_minus = Level_leq_2_TreeNode (DEGREE::ONE,
                                                tree.tree_1.Root(),
                                                nullptr);
+
+            direction = DIRECTION::DOWN;
+
             final_tree_with_node = FinalTreeWithNode (LevelOneTree(), nullptr);
         }
         if (d == DEGREE::TWO)
         {
-            direction = DIRECTION::DOWN;
             node_minus = Level_leq_2_TreeNode (DEGREE::TWO,
                                                nullptr,
                                                tree.tree_2.Root() );
+            direction = DIRECTION::DOWN;
             final_tree_with_node = tree.tree_2.Root()->LastEntry().second.CompletionWithNode();
             // set the final level-1 tree to be of card 1,
             //    with (0) as unique element
@@ -4717,8 +4844,7 @@ public:
         }
         else
         {
-            final_tree_with_node.first = PP.final_tree_with_node.first;
-            final_tree_with_node.second = final_tree_with_node.first.MyNode (PP.final_tree_with_node.first.EntireEntry (PP.final_tree_with_node.second) );
+            MakeCopy (final_tree_with_node, PP.final_tree_with_node);
         }
     }
 
@@ -4727,10 +4853,8 @@ public:
         // of degree 0
         // from a level <= 2 tree
         tree (P),
+        node_minus (zeroLevel_leq_2_TreeNode ),
         direction (DIRECTION::NA),
-        node_minus (Level_leq_2_TreeNode (DEGREE::ZERO,
-                                          nullptr,
-                                          nullptr) ),
         final_tree_with_node (LevelOneTree(), nullptr)
     {}
     PartialLevel_leq_2_Tree (Level_leq_2_Tree && P) :
@@ -4738,10 +4862,8 @@ public:
         // of degree 0
         // from a level <= 2 tree
         tree (std::move (P) ),
+        node_minus (zeroLevel_leq_2_TreeNode),
         direction (DIRECTION::NA),
-        node_minus (Level_leq_2_TreeNode (DEGREE::ZERO,
-                                          nullptr,
-                                          nullptr) ),
         final_tree_with_node (LevelOneTree(), nullptr)
     {}
 
@@ -4754,10 +4876,10 @@ public:
         // specify: the ucf s
         //
         tree (P),
-        direction (DIRECTION::DOWN),
         node_minus (Level_leq_2_TreeNode (DEGREE::ONE,
                                           tree.tree_1.MyNode (s) ,
                                           nullptr) ),
+        direction (DIRECTION::DOWN),
         final_tree_with_node (LevelOneTree(), nullptr)
     {}
     PartialLevel_leq_2_Tree (Level_leq_2_Tree && P,
@@ -4768,16 +4890,16 @@ public:
         // specify: the ucf s
         //
         tree (std::move (P) ),
-        direction (DIRECTION::DOWN),
         node_minus (Level_leq_2_TreeNode (DEGREE::ONE,
                                           tree.tree_1.MyNode (s) ,
                                           nullptr) ),
+        direction (DIRECTION::DOWN),
         final_tree_with_node (LevelOneTree(), nullptr)
     {}
 
     PartialLevel_leq_2_Tree (const Level_leq_2_Tree & P,
-                             const DIRECTION & i,
-                             const DoubleSequence & s) :
+                             const DoubleSequence & s,
+                             const DIRECTION & i) :
         // construct a partial level <=2 tree
         // of degree 2,
         // moving down or left, depending on i
@@ -4785,10 +4907,11 @@ public:
         // specify: the direction of ucf i, the ucf s
         //
         tree (P),
-        direction (i),
         node_minus (Level_leq_2_TreeNode (DEGREE::TWO,
                                           nullptr,
-                                          tree.tree_2.MyNodeInDomain (s) ) )
+                                          tree.tree_2.MyNodeInDomain (s) ) ),
+        direction (i)
+
     {
         if (direction == DIRECTION::DOWN)
         {
@@ -4800,8 +4923,8 @@ public:
         }
     }
     PartialLevel_leq_2_Tree ( Level_leq_2_Tree && P,
-                              const DIRECTION & i,
-                              const DoubleSequence & s) :
+                              const DoubleSequence & s,
+                              const DIRECTION & i) :
         // construct a partial level <=2 tree
         // of degree 2,
         // moving down or left, depending on i
@@ -4809,10 +4932,10 @@ public:
         // specify: the direction of ucf i, the ucf s
         //
         tree (std::move (P) ),
-        direction (i),
         node_minus (Level_leq_2_TreeNode (DEGREE::TWO,
                                           nullptr,
-                                          tree.tree_2.MyNodeInDomain (s) ) )
+                                          tree.tree_2.MyNodeInDomain (s) ) ),
+        direction (i)
     {
         if (direction == DIRECTION::DOWN)
         {
@@ -5080,7 +5203,7 @@ public:
 
         auto out_2 (Tree_2() );
         auto && ucf_2 = Tree_2().EntireEntryInDomain (std::get<2> (node_minus) );
-        out_2.Add (direction, ucf_2);
+        out_2.Add (ucf_2, direction);
 
         return Level_leq_2_Tree (
                    std::move (out_1),
@@ -5096,7 +5219,7 @@ public:
 
         auto out_2 (Tree_2() );
         auto && ucf_2 = Tree_2().EntireEntryInDomain (std::get<2> (node_minus) );
-        out_2.Add (direction, ucf_2, ucf_1);
+        out_2.Add (ucf_2, direction, ucf_1);
 
         return Level_leq_2_Tree (
                    std::move (out_1),
@@ -5278,15 +5401,15 @@ private:
                 // chosen degree 0
                 if (Degree (s) == DEGREE::ONE)
                     // degree of s is 1
-                    Add_10 (DIRECTION::DOWN, s);
+                    Add_10 ( s, DIRECTION::DOWN);
                 else
                     // degree of s is 2
                     if (degree_of_completion == DEGREE::ZERO)
                         // completion has degree 0
-                        Add_200 (DIRECTION::DOWN, s);
+                        Add_200 (s, DIRECTION::DOWN);
                     else
                         // completion has degree 1
-                        Add_210 (DIRECTION::DOWN, s, ucf_21);
+                        Add_210 ( s, DIRECTION::DOWN, ucf_21);
             }
             else if (k == 1)
             {
@@ -5330,13 +5453,13 @@ private:
                 auto ucf_31 =  qq[qq.size() - k];
 
                 if (Degree (s) == DEGREE::ONE)
-                    Add_11 (DIRECTION::DOWN, s, ucf_31);
+                    Add_11 (s, DIRECTION::DOWN, ucf_31);
 
                 else if (degree_of_completion == DEGREE::ZERO)
-                    Add_201 (DIRECTION::DOWN, s, ucf_31);
+                    Add_201 (s, DIRECTION::DOWN, ucf_31);
 
                 else
-                    Add_211 (DIRECTION::DOWN, s, ucf_21, ucf_31);
+                    Add_211 (s, DIRECTION::DOWN, ucf_21,  ucf_31);
             }
             else
             {
@@ -5410,13 +5533,13 @@ private:
                 }
 
                 if (Degree (s) == DEGREE::ONE)
-                    Add_12 (DIRECTION::DOWN, s, i2, ucf_32);
+                    Add_12 (s, DIRECTION::DOWN, ucf_32, i2);
 
                 else if (degree_of_completion == DEGREE::ZERO)
-                    Add_202 (DIRECTION::DOWN, s, i2, ucf_32);
+                    Add_202 ( s, DIRECTION::DOWN, ucf_32, i2);
 
                 else
-                    Add_212 (DIRECTION::DOWN, s, ucf_21, i2, ucf_32);
+                    Add_212 (s, DIRECTION::DOWN, ucf_21, ucf_32, i2);
             }
         }
     }
@@ -5568,8 +5691,8 @@ public:
     // if i want to add a node below / left of s
     // what is the tree component of the new node?
     // the prede of the new node has degree 1 or 2 but cshoose the deg 0 extension
-    Level_leq_2_Tree NewLevel_leq_2_Tree (const DIRECTION & i,
-                                          LevelThreeTreeNode * const s)
+    Level_leq_2_Tree NewLevel_leq_2_Tree (LevelThreeTreeNode * const s,
+                                          const DIRECTION & i)
     {
         if (i == DIRECTION::DOWN)
         {
@@ -5591,8 +5714,8 @@ public:
     // what is the tree component of the new node?
     // the prede of the new node has degree 2 and
     //      choose the completion of degree 1, ucf u
-    Level_leq_2_Tree NewLevel_leq_2_Tree (const DIRECTION & i,
-                                          LevelThreeTreeNode * const s,
+    Level_leq_2_Tree NewLevel_leq_2_Tree (LevelThreeTreeNode * const s,
+                                          const DIRECTION & i,
                                           const SingleSequence & u)
     {
         if (i == DIRECTION::DOWN)
@@ -5612,32 +5735,33 @@ public:
     }
 
 
-    // add a  new node of degree 0 below root
+    // add a new node of degree 0 below root
     LevelThreeTreeNode *  Add_0()
     {
-        return ::Add (DIRECTION::DOWN,
-                      *this,
-                      Root(),
-                      PartialLevel_leq_2_Tree (DEGREE::ZERO) );
+        return ::Add ( *this,
+                       Root(),
+                       DIRECTION::DOWN,
+                       PartialLevel_leq_2_Tree (DEGREE::ZERO) );
     }
 
 
     // add a  new node of degree 1 below root
     LevelThreeTreeNode *  Add_1()
     {
-        return ::Add (DIRECTION::DOWN,
-                      *this,
-                      Root(),
-                      PartialLevel_leq_2_Tree (DEGREE::ONE) );
+        return ::Add (
+                   *this,
+                   Root(),
+                   DIRECTION::DOWN,
+                   PartialLevel_leq_2_Tree (DEGREE::ONE) );
     }
 
 
     // add a  new node of degree 2 below root
     LevelThreeTreeNode *  Add_2()
     {
-        return ::Add (DIRECTION::DOWN,
-                      *this,
+        return ::Add (*this,
                       Root(),
+                      DIRECTION::DOWN,
                       PartialLevel_leq_2_Tree (DEGREE::TWO) );
     }
 
@@ -5646,62 +5770,63 @@ public:
     // s has degree 1, so the value has a unique completion
     // the new node has degree 0
     // add a node , eithe child of s or an elder sister of s
-    LevelThreeTreeNode *  Add_10 (const DIRECTION & i3,
-                                  LevelThreeTreeNode * const s)
+    LevelThreeTreeNode *  Add_10 (LevelThreeTreeNode * const s,
+                                  const DIRECTION & i3)
     {
-        auto && new_tree = NewLevel_leq_2_Tree (i3, s);
+        auto && new_tree = NewLevel_leq_2_Tree (s, i3);
         auto && new_partial_tree = PartialLevel_leq_2_Tree (new_tree);
 
-        return ::Add (i3, *this, s, new_partial_tree);
+        return ::Add (*this, s, i3, new_partial_tree);
     }
 
-    LevelThreeTreeNode *  Add_10 (const DIRECTION & i3,
-                                  const DoubleSequence & s)
+    LevelThreeTreeNode *  Add_10 (const DoubleSequence & s,
+                                  const DIRECTION & i3)
     {
-        return Add_10 (i3, this->MyNodeInDomain (s) );
+        return Add_10 (this->MyNodeInDomain (s), i3);
     }
 
 
     // s has degree 1, so the value has a unique completion
     // the new node has degree 1, with ucf ucf_31
     //add a node , eithe child of s or an elder sister of s
-    LevelThreeTreeNode *  Add_11 (const DIRECTION & i3,
-                                  LevelThreeTreeNode * const s,
+    LevelThreeTreeNode *  Add_11 (LevelThreeTreeNode * const s,
+                                  const DIRECTION & i3,
                                   const SingleSequence & ucf_31)
     {
-        auto && new_tree = NewLevel_leq_2_Tree (i3, s);
+        auto && new_tree = NewLevel_leq_2_Tree (s, i3);
         auto && new_partial_tree = PartialLevel_leq_2_Tree (new_tree, ucf_31);
 
-        return ::Add (i3, *this, s, new_partial_tree);
+        return ::Add (*this, s, i3, new_partial_tree);
     }
 
-    LevelThreeTreeNode *  Add_11 (const DIRECTION & i3,
-                                  const DoubleSequence & s,
+    LevelThreeTreeNode *  Add_11 (const DoubleSequence & s,
+                                  const DIRECTION & i3,
                                   const SingleSequence & ucf_31)
     {
-        return Add_11 (i3, this->MyNodeInDomain (s), ucf_31);
+        return Add_11 (this->MyNodeInDomain (s), i3, ucf_31);
     }
 
 
     // s has degree 1, so the value has a unique completion
-    // the new node goes in the direction i2, with ucf ucf_32
-    //add a node , eithe child of s or an elder sister of s
-    LevelThreeTreeNode *  Add_12 (const DIRECTION & i3,
-                                  LevelThreeTreeNode * const s,
-                                  const DIRECTION & i2,
-                                  const DoubleSequence & ucf_32)
+    // add a new node in dhe diriciton i3
+    // the hanging node  of the new partial level <=2 treegoes in the direction i2, with ucf ucf_32
+    LevelThreeTreeNode *  Add_12 (LevelThreeTreeNode * const s,
+                                  const DIRECTION & i3,
+                                  const DoubleSequence & ucf_32,
+                                  const DIRECTION & i2)
     {
-        auto && new_tree = NewLevel_leq_2_Tree (i3, s);
-        auto && new_partial_tree = PartialLevel_leq_2_Tree (new_tree, i2, ucf_32);
+        auto && new_tree = NewLevel_leq_2_Tree (s, i3);
+        auto && new_partial_tree = PartialLevel_leq_2_Tree (new_tree, ucf_32, i2);
 
-        return ::Add (i3, *this, s, new_partial_tree);
+        return ::Add (*this, s, i3, new_partial_tree);
     }
-    LevelThreeTreeNode *  Add_12 (const DIRECTION & i3,
-                                  const DoubleSequence & s,
-                                  const DIRECTION & i2,
-                                  const DoubleSequence & ucf_32)
+    LevelThreeTreeNode *  Add_12 (const DoubleSequence & s,
+                                  const DIRECTION & i3,
+                                  const DoubleSequence & ucf_32,
+                                  const DIRECTION & i2
+                                 )
     {
-        return Add_12 (i3, this->MyNodeInDomain (s), i2, ucf_32);
+        return Add_12 (this->MyNodeInDomain (s), i3, ucf_32, i2);
     }
 
 
@@ -5710,20 +5835,22 @@ public:
     //      in the level-2 part
     // the new node has degree 0
     //add a node , eithe child of s or an elder sister of s
-    LevelThreeTreeNode *  Add_200 (const DIRECTION & i3,
-                                   LevelThreeTreeNode * const s)
+    LevelThreeTreeNode *  Add_200 (LevelThreeTreeNode * const s,
+                                   const DIRECTION & i3
+                                  )
 
     {
-        auto && new_tree = NewLevel_leq_2_Tree (i3, s);
+        auto && new_tree = NewLevel_leq_2_Tree (s, i3);
         auto && new_partial_tree = PartialLevel_leq_2_Tree (new_tree);
 
-        return ::Add (i3, *this, s, new_partial_tree);
+        return ::Add (*this, s, i3, new_partial_tree);
     }
 
-    LevelThreeTreeNode *  Add_200 (const DIRECTION & i3,
-                                   const DoubleSequence & s)
+    LevelThreeTreeNode *  Add_200 (const DoubleSequence & s,
+                                   const DIRECTION & i3
+                                  )
     {
-        return Add_200 (i3, this->MyNodeInDomain (s) );
+        return Add_200 (this->MyNodeInDomain (s) , i3);
     }
 
     // s has degree 2,
@@ -5731,22 +5858,22 @@ public:
     //      in the level-2 part
     // the new node has degree 1, with ucf ucf_31
     //add a node , eithe child of s or an elder sister of s
-    LevelThreeTreeNode *  Add_201 (const DIRECTION & i3,
-                                   LevelThreeTreeNode * const s,
+    LevelThreeTreeNode *  Add_201 (LevelThreeTreeNode * const s,
+                                   const DIRECTION & i3,
                                    const SingleSequence & ucf_31)
 
     {
-        auto && new_tree = NewLevel_leq_2_Tree (i3, s);
+        auto && new_tree = NewLevel_leq_2_Tree (s, i3);
         auto && new_partial_tree = PartialLevel_leq_2_Tree (new_tree, ucf_31);
 
-        return ::Add (i3, *this, s, new_partial_tree);
+        return ::Add (*this, s, i3, new_partial_tree);
     }
 
-    LevelThreeTreeNode *  Add_201 (const DIRECTION & i3,
-                                   const DoubleSequence & s,
+    LevelThreeTreeNode *  Add_201 (const DoubleSequence & s,
+                                   const DIRECTION & i3,
                                    const SingleSequence & ucf_31)
     {
-        return Add_201 (i3, this->MyNodeInDomain (s), ucf_31);
+        return Add_201 (this->MyNodeInDomain (s), i3, ucf_31);
     }
 
     // s has degree 2,
@@ -5754,24 +5881,26 @@ public:
     //      in the level-2 part
     // the new node has degree 2, with ucf ucf_32
     //add a node , eithe child of s or an elder sister of s
-    LevelThreeTreeNode *  Add_202 (const DIRECTION & i3,
-                                   LevelThreeTreeNode * const s,
-                                   const DIRECTION & i2,
-                                   const DoubleSequence & ucf_32)
+    LevelThreeTreeNode *  Add_202 (LevelThreeTreeNode * const s,
+                                   const DIRECTION & i3,
+                                   const DoubleSequence & ucf_32,
+                                   const DIRECTION & i2
+                                  )
 
     {
-        auto && new_tree = NewLevel_leq_2_Tree (i3, s);
-        auto && new_partial_tree = PartialLevel_leq_2_Tree (new_tree, i2, ucf_32);
+        auto && new_tree = NewLevel_leq_2_Tree (s, i3);
+        auto && new_partial_tree = PartialLevel_leq_2_Tree (new_tree, ucf_32, i2);
 
-        return ::Add (i3, *this, s, new_partial_tree);
+        return ::Add (*this, s, i3,  new_partial_tree);
     }
 
-    LevelThreeTreeNode *  Add_202 (const DIRECTION & i3,
-                                   const DoubleSequence & s,
-                                   const DIRECTION & i2,
-                                   const DoubleSequence & ucf_32)
+    LevelThreeTreeNode *  Add_202 (const DoubleSequence & s,
+                                   const DIRECTION & i3,
+                                   const DoubleSequence & ucf_32,
+                                   const DIRECTION & i2
+                                  )
     {
-        return Add_202 (i3, this->MyNodeInDomain (s), i2, ucf_32);
+        return Add_202 (this->MyNodeInDomain (s), i3, ucf_32, i2);
     }
 
 
@@ -5780,21 +5909,21 @@ public:
     //      in the level-2 part, with ucf ucf_21
     // the new node has degree 0
     //add a node , eithe child of s or an elder sister of s
-    LevelThreeTreeNode *  Add_210 (const DIRECTION & i3,
-                                   LevelThreeTreeNode * const s,
+    LevelThreeTreeNode *  Add_210 (LevelThreeTreeNode * const s,
+                                   const DIRECTION & i3,
                                    const SingleSequence & ucf_21)
     {
-        auto && new_tree = NewLevel_leq_2_Tree (i3, s, ucf_21);
+        auto && new_tree = NewLevel_leq_2_Tree (s, i3, ucf_21);
         auto && new_partial_tree = PartialLevel_leq_2_Tree (new_tree);
 
-        return ::Add (i3, *this, s, new_partial_tree);
+        return ::Add (*this, s, i3, new_partial_tree);
     }
 
-    LevelThreeTreeNode *  Add_210 (const DIRECTION & i3,
-                                   const DoubleSequence & s,
+    LevelThreeTreeNode *  Add_210 (const DoubleSequence & s,
+                                   const DIRECTION & i3,
                                    const SingleSequence & ucf_21)
     {
-        return Add_210 (i3, this->MyNodeInDomain (s), ucf_21);
+        return Add_210 (this->MyNodeInDomain (s), i3, ucf_21);
     }
 
     // s has degree 2,
@@ -5802,24 +5931,24 @@ public:
     //      in the level-2 part
     // the new node has degree 1, with ucf ucf_31
     //add a node , eithe child of s or an elder sister of s
-    LevelThreeTreeNode *  Add_211 (const DIRECTION & i3,
-                                   LevelThreeTreeNode * const s,
+    LevelThreeTreeNode *  Add_211 (LevelThreeTreeNode * const s,
+                                   const DIRECTION & i3,
                                    const SingleSequence & ucf_21,
                                    const  SingleSequence & ucf_31)
 
     {
-        auto && new_tree = NewLevel_leq_2_Tree (i3, s, ucf_21);
+        auto && new_tree = NewLevel_leq_2_Tree (s, i3, ucf_21);
         auto && new_partial_tree = PartialLevel_leq_2_Tree (new_tree, ucf_31);
 
-        return ::Add (i3, *this, s, new_partial_tree);
+        return ::Add (*this, s, i3,  new_partial_tree);
     }
 
-    LevelThreeTreeNode *  Add_211 (const DIRECTION & i3,
-                                   const DoubleSequence & s,
+    LevelThreeTreeNode *  Add_211 (const DoubleSequence & s,
+                                   const DIRECTION & i3,
                                    const SingleSequence & ucf_21,
                                    const SingleSequence & ucf_31)
     {
-        return Add_211 (i3, this->MyNodeInDomain (s), ucf_21, ucf_31);
+        return Add_211 (this->MyNodeInDomain (s), i3, ucf_21, ucf_31);
     }
 
 
@@ -5828,25 +5957,27 @@ public:
     //      in the level-2 part, with ucf ucf_21
     // the new node has degree 2, with direction i2 and ucf ucf_32
     //add a node , eithe child of s or an elder sister of s
-    LevelThreeTreeNode *  Add_212 (const DIRECTION & i3,
-                                   LevelThreeTreeNode * const s,
+    LevelThreeTreeNode *  Add_212 (LevelThreeTreeNode * const s,
+                                   const DIRECTION & i3,
                                    const SingleSequence & ucf_21,
-                                   const DIRECTION & i2,
-                                   const DoubleSequence & ucf_32)
+                                   const DoubleSequence & ucf_32,
+                                   const DIRECTION & i2
+                                  )
     {
-        auto && new_tree = NewLevel_leq_2_Tree (i3, s, ucf_21);
-        auto && new_partial_tree = PartialLevel_leq_2_Tree (new_tree, i2, ucf_32);
+        auto && new_tree = NewLevel_leq_2_Tree (s, i3, ucf_21);
+        auto && new_partial_tree = PartialLevel_leq_2_Tree (new_tree, ucf_32, i2);
 
-        return ::Add (i3, *this, s, new_partial_tree);
+        return ::Add (*this, s, i3, new_partial_tree);
     }
 
-    LevelThreeTreeNode *  Add_212 (const DIRECTION & i3,
-                                   const DoubleSequence & s,
+    LevelThreeTreeNode *  Add_212 (const DoubleSequence & s,
+                                   const DIRECTION & i3,
                                    const SingleSequence & ucf_21,
-                                   const DIRECTION & i2,
-                                   const DoubleSequence & ucf_32)
+                                   const DoubleSequence & ucf_32,
+                                   const DIRECTION & i2
+                                  )
     {
-        return Add_212 (i3, this->MyNodeInDomain (s), ucf_21, i2, ucf_32);
+        return Add_212 (this->MyNodeInDomain (s), i3, ucf_21, ucf_32, i2);
     }
 
 };
@@ -5897,16 +6028,6 @@ Level_leq_2_TreeNode NodeInTree (const Level_222_FactorNode & s)
                                  NodeInTree_2 (s) );
 }
 
-
-constexpr Level_222_FactorNode
-zeroLevel_leq_2_FactorNode = Level_222_FactorNode
-{
-    DEGREE::ZERO,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr
-};
 
 
 // remove a node in the level-222-factor
@@ -6117,8 +6238,7 @@ public:
         else
         {
             ucf_at_domain_node = factor.MyNodeInDomain (D.factor.EntireEntryInDomain (D.ucf_at_domain_node) );
-            final_tree_with_node.first = D.final_tree_with_node.first;
-            final_tree_with_node.second = D.final_tree_with_node.first.MyNode (D.final_tree_with_node.first.EntireEntry (D.final_tree_with_node.second) );
+            MakeCopy (final_tree_with_node, D.final_tree_with_node);
         }
 
         for (auto && i : D.enumeration)
@@ -6150,27 +6270,18 @@ public:
     bool IsContinuousType_Star (const Level_leq_2_Tree & T,
                                 const Level_leq_2_Tree & Q) const
     {
-        if (Degree (ucf_at_domain_node) == DEGREE::ZERO)
-        {
-            return false;
-        }
 
-        if (Degree (ucf_at_domain_node) == DEGREE::ONE)
-        {
-            auto && ucf_21 = UCF_21_Desc();
-            return ucf_21.IsContinuousType_Star (Q.tree_1);
-        }
-
-        // now defree is 2
-        auto && ucf_221 = UCF_221_Desc();
-        // this ucf_221 has deg 2
-
-        if (Degree (ucf_at_domain_node) == DEGREE::ZERO)
-        {
-            return false;
-        }
-        return factor.IsContinuous (T, Q, ucf_direction, ucf_at_domain_node);
+        return factor.IsContinuous (T, Q, ucf_at_domain_node , ucf_direction);
     }
+
+
+    bool IsDiscontinuousType_Star (const Level_leq_2_Tree & T,
+                                   const Level_leq_2_Tree & Q) const
+    {
+
+        return ! factor.IsContinuous (T, Q, ucf_at_domain_node , ucf_direction);
+    }
+
 
 
     /*
@@ -6244,7 +6355,7 @@ public:
         // extend the current  desc by one
         //
         // must be discontinuous to start with
-        // resulting in a new discontinuous desc, whose ucf is not -1
+        // resulting in a new discontinuous desc, whose ucf is not (0,-1)
         //
 
         Extend_1 (extend_node, std::forward<A> (new_in_image) );
@@ -6280,6 +6391,8 @@ public:
 
         ucf_at_domain_node = zeroLevel_leq_2_FactorNode;
         ucf_direction = DIRECTION::NA;
+
+        // final tree was empty to start with, and will remain empty
     }
 
     template <typename A>
@@ -6299,6 +6412,8 @@ public:
 
         ucf_at_domain_node = new_in_domain;
         ucf_direction = DIRECTION::NA;
+
+        // final tree was empty to start with, and will remain empty
     }
 
 
@@ -6330,6 +6445,8 @@ public:
 
         ucf_at_domain_node = factor.MyNodeInDomain (new_ucf);
         ucf_direction = new_direction;
+
+        final_tree_with_node = factor.domain.CreateFinalTreeWithNodeFromUCF ( new_ucf, new_direction);
     }
 
 
@@ -6349,14 +6466,17 @@ public:
 
         sequence.emplace_back (extend_node);
 
-        auto && new_in_domain = factor.Add (ucf_direction,
-                                            factor.EntireEntryInDomain (ucf_at_domain_node),
+        auto && new_in_domain = factor.Add (factor.EntireEntryInDomain (ucf_at_domain_node),
+                                            ucf_direction,
+
                                             std::forward<A> (new_in_image) );
 
         enumeration.emplace_back (new_in_domain);
 
         ucf_at_domain_node = zeroLevel_leq_2_FactorNode;
         ucf_direction = DIRECTION::NA;
+
+        final_tree_with_node = FinalTreeWithNode (LevelOneTree(), nullptr);
     }
 
     template <typename A>
@@ -6372,14 +6492,16 @@ public:
         //
 
         auto && new_in_domain = factor.Add
-                                (ucf_direction,
-                                 factor.EntireEntryInDomain (ucf_at_domain_node),
+                                (factor.EntireEntryInDomain (ucf_at_domain_node),
+                                 ucf_direction,
                                  std::forward<A> (new_in_image) );
 
         enumeration.emplace_back (new_in_domain);
 
         ucf_at_domain_node = new_in_domain;
         ucf_direction = DIRECTION::NA;
+
+        // final tree doesn't change by defintiion
     }
 
 
@@ -6413,6 +6535,8 @@ public:
 
         ucf_at_domain_node = factor.MyNodeInDomain (new_ucf);
         ucf_direction = new_direction;
+
+        final_tree_with_node = factor.domain.CreateFinalTreeWithNodeFromUCF ( new_ucf, new_direction);
     }
 
 
@@ -6433,8 +6557,8 @@ public:
 
         sequence.emplace_back (extend_node);
 
-        auto && new_in_domain = factor.Add (ucf_direction,
-                                            factor.EntireEntryInDomain (ucf_at_domain_node),
+        auto && new_in_domain = factor.Add (factor.EntireEntryInDomain (ucf_at_domain_node),
+                                            ucf_direction,
                                             ucf_21,
                                             std::forward<A> (new_in_image) );
 
@@ -6442,6 +6566,9 @@ public:
 
         ucf_at_domain_node = zeroLevel_leq_2_FactorNode;
         ucf_direction = DIRECTION::NA;
+
+        final_tree_with_node = FinalTreeWithNode (LevelOneTree(), nullptr);
+
     }
 
     template <typename A>
@@ -6458,8 +6585,8 @@ public:
         //
 
         auto && new_in_domain = factor.Add
-                                (ucf_direction,
-                                 factor.EntireEntryInDomain (ucf_at_domain_node),
+                                (factor.EntireEntryInDomain (ucf_at_domain_node),
+                                 ucf_direction,
                                  ucf_21,
                                  std::forward<A> (new_in_image) );
 
@@ -6467,6 +6594,8 @@ public:
 
         ucf_at_domain_node = new_in_domain;
         ucf_direction = DIRECTION::NA;
+
+        // final tree doesn't change by defintion
     }
 
 
@@ -6476,22 +6605,26 @@ public:
                               const DIRECTION & new_direction)
     {
         // current is disc type
-        // move the last entry to "last_entry_in_node", which is not -1, and ucf is not -1
+        // move the last entry to "last_entry_in_node", which is not -1, and ucf is not (0,-1)
 
         sequence.back() = last_entry_in_node;
 
         ucf_at_domain_node = factor.MyNodeInDomain (new_ucf);
         ucf_direction = new_direction;
+
+        final_tree_with_node = factor.domain.CreateFinalTreeWithNodeFromUCF ( new_ucf, new_direction);
     }
 
     void MoveLastEntryInNode (const SingleSequence & last_entry_in_node)
     {
         // current is disc type
-        // move the last entry to "last_entry_in_node", which is not -1, and ucf is -1
+        // move the last entry to "last_entry_in_node", which is not -1, and ucf is (0,-1)
 
         sequence.back() = last_entry_in_node;
         ucf_at_domain_node = zeroLevel_leq_2_FactorNode;
         ucf_direction = DIRECTION::NA;
+
+        final_tree_with_node = FinalTreeWithNode (LevelOneTree(), nullptr);
     }
 
     void MoveLastEntryInNode ()
@@ -6503,6 +6636,18 @@ public:
         ucf_at_domain_node = LastNodeInDomain();
         ucf_direction = DIRECTION::NA;
 
+        // nneeet do reset the final tree, as the penultimate
+        if (std::get<0> (ucf_at_domain_node) == DEGREE::ONE)
+        {
+            final_tree_with_node = FinalTreeWithNode (LevelOneTree(), nullptr);
+        }
+
+        auto && X2 = factor.domain.tree_2;
+        auto && x = NodeInTree_2 (ucf_at_domain_node);
+
+        final_tree_with_node = X2.PresentFinalTreeWithNode (x);
+        // x is never root here!!
+        // i.e. a nonconstant desc must have a nonempty effective node!!
     }
 
 
@@ -6562,18 +6707,15 @@ pair<leq_2_Sequence, DIRECTION> UCF (const Level_221_Desc & C,
 
     if (C.Degree() == DEGREE::ONE)
         return pair<leq_2_Sequence, DIRECTION> (
-                   leq_2_Sequence (DEGREE::ZERO,
-                                   SingleSequence(),
-                                   DoubleSequence() ),
+                   zero_leq_2_Sequence,
                    DIRECTION::NA);
     if (C.UCFAtDomain() == nullptr)
         return pair<leq_2_Sequence, DIRECTION> (
-                   leq_2_Sequence (DEGREE::ZERO,
-                                   SingleSequence(),
-                                   DoubleSequence() ),
+                   zero_leq_2_Sequence,
                    DIRECTION::NA);
     auto critical_desc = C.UCF_As21Desc();
     return UCF_Star (critical_desc, W);
+    // coulb de leftwards or downlwards
 }
 
 pair<leq_2_Sequence, DIRECTION> UCF_plus (const Level_221_Desc & C,
@@ -6581,6 +6723,7 @@ pair<leq_2_Sequence, DIRECTION> UCF_plus (const Level_221_Desc & C,
 {
     auto && critical_desc = C.UCF_As21Desc();
     return UCF_Star (critical_desc, W_plus);
+    // always downwards
 }
 
 // B is a (*,*,Q)-desc
@@ -6596,11 +6739,8 @@ pair<leq_2_Sequence, DIRECTION> BaseUCF (
     {
         // degree 0
         return pair<leq_2_Sequence, DIRECTION>
-               (leq_2_Sequence (DEGREE::ZERO,
-                                SingleSequence(),
-                                DoubleSequence()
-                               ),
-                DIRECTION::NA) ;
+               (                   zero_leq_2_Sequence,
+                                   DIRECTION::NA) ;
     }
 
 
@@ -6638,12 +6778,12 @@ pair<leq_2_Sequence, DIRECTION> BaseUCF (
     if (B.ucf_direction == DIRECTION::LEFT)
     {
         return UCF (critical_desc,  Ww.Tree() );
-        // the result ucf is always leftwards
+        // maybe leftwards or downwards
     }
     else
     {
         return UCF (critical_desc,  Ww.Completion() );
-        // the result is alfays downwaods,
+        // always downwards
     }
 }
 
@@ -6744,14 +6884,14 @@ void MoveToLeft (const Level_21_Desc & D,
 //          if i = DOWN
 //             D' must extend by attaching (w_pred,q2_last), w must not be nullptr
 //
-// REMARK2: D is nonconstant to start with
+// REMARK2: if i =LEFT then D is nonconstant to start with
 //
 void MoveToLeft (const Level_21_Desc & D,
                  Level_21_Desc & D_prime,
-                 const Level_leq_2_Tree & Q,
+                 //             const Level_leq_2_Tree & Q,
                  const Level_leq_2_Tree & Q_prime,
-                 const DIRECTION & i,
                  const Level_leq_2_TreeNode & q,
+                 const DIRECTION & i,
                  const LevelOneTree & W,
                  const LevelOneTreeNode * const w)
 {
@@ -6865,10 +7005,10 @@ void MoveToLeft (const Level_21_Desc & D,
 
 void MoveToLeft (const Level_21_Desc & D,
                  Level_21_Desc & D_prime,
-                 const Level_leq_2_Tree & Q,
+                 //             const Level_leq_2_Tree & Q,
                  const Level_leq_2_Tree & Q_prime,
                  const Level_leq_2_TreeNode & q,
-                 const LevelOneTree & W,
+                 //             const LevelOneTree & W,
                  const LevelOneTree & W_plus,
                  const LevelOneTreeNode * const w)
 {
@@ -6987,10 +7127,10 @@ void MoveToLeft (const Level_21_Desc & D,
 void MoveToLeft (const Level_221_Desc & C,
                  Level_221_Desc & C_prime,
                  const Level_leq_2_Tree & T,
-                 const Level_leq_2_Tree & Q,
+                 //             const Level_leq_2_Tree & Q,
                  const Level_leq_2_Tree & Q_prime,
-                 const DIRECTION & i,
                  const Level_leq_2_TreeNode & q,
+                 const DIRECTION & i,
                  const LevelOneTree & W,
                  const LevelOneTreeNode * const w)
 {
@@ -7012,7 +7152,7 @@ void MoveToLeft (const Level_221_Desc & C,
 
         Level_21_Desc critical_left (STATE::INVALID);
 
-        MoveToLeft (critical_21_desc, critical_left, Q, Q_prime, i, q, W, w);
+        MoveToLeft (critical_21_desc, critical_left, Q_prime, q, i, W, w);
         //
         // found the 21-desc to move, and move it
         //
@@ -7084,7 +7224,7 @@ void MoveToLeft (const Level_221_Desc & C,
             // automatically good
             //
             auto && bound_in_C =  C.UCF_As21Desc();
-            MoveToLeft (bound_in_C, critical_21_desc, Q, Q_prime, i, q, W, w);
+            MoveToLeft (bound_in_C, critical_21_desc,  Q_prime, q, i, W, w);
             if (critical_21_desc.state == STATE::INVALID)
             {
                 //squeezed out
@@ -7214,10 +7354,10 @@ void MoveToLeft (const Level_221_Desc & C,
 void MoveToLeft (const Level_221_Desc & C,
                  Level_221_Desc & C_prime,
                  const Level_leq_2_Tree & T,
-                 const Level_leq_2_Tree & Q,
+                 //            const Level_leq_2_Tree & Q,
                  const Level_leq_2_Tree & Q_prime,
                  const Level_leq_2_TreeNode & q,
-                 const LevelOneTree & W,
+                 //             const LevelOneTree & W,
                  const LevelOneTree & W_plus,
                  const LevelOneTreeNode * const w)
 {
@@ -7239,7 +7379,7 @@ void MoveToLeft (const Level_221_Desc & C,
 
         Level_21_Desc critical_left (STATE::INVALID);
 
-        MoveToLeft (critical_21_desc, critical_left, Q, Q_prime, q, W, W_plus, w);
+        MoveToLeft (critical_21_desc, critical_left,  Q_prime, q,  W_plus, w);
         //
         // found the 21-desc to move, and move it
         //
@@ -7310,7 +7450,7 @@ void MoveToLeft (const Level_221_Desc & C,
             // need to find another D'<D, good transitioning extension
             //
             auto && bound_in_C =  C.UCF_As21Desc();
-            MoveToLeft (bound_in_C, critical_21_desc, Q, Q_prime, q, W, W_plus, w);
+            MoveToLeft (bound_in_C, critical_21_desc,  Q_prime, q,  W_plus, w);
             if (critical_21_desc.state == STATE::INVALID)
             {
                 //squeezed out
@@ -7424,42 +7564,58 @@ void MoveToLeft (const Level_221_Desc & C,
     return;
 }
 
+// the tree component is already the same to match
+bool Match (const FinalTreeWithNode & Ww, const FinalTreeWithNode & Pp)
+{
+    if (Ww.second == nullptr && Pp.second != nullptr)
+    {
+        return false;
+    }
+    if (Ww.second != nullptr && Pp.second == nullptr)
+    {
+        return false;
+    }
+    if (Ww.second == nullptr && Pp.second == nullptr)
+    {
+        return true;
+    }
+    return Ww.first.EntireEntry (Ww.second) == Pp.first.EntireEntry (Pp.second);
+}
+
 
 // given B, a (Y,T,Q)-desc
-// B' , either invalid (standing for starting the computation) or a (B,T,Q')-desc whose restriction to (T,Q) is B,
-// produce the left of B' whose restriction to (Y,T,Q) is still B
+// B' , either invalid (standing for starting the computation) or a candidate (B,T,Q')-desc whose restriction to (T,Q) is B,
+// produce the left candidate of B' whose restriction to (Y,T,Q) is still B
 //
 // Q' is the completion of (Q,q), q is the hanging node whose ucf in Q is going in the direction i
 //
-//  REMARK:  W doesn't move
-//           this means X must create a node on the left of pi^{-1}(C)
 //
 //
 //  REMARK: B is a (Y,T, (Q,i,q-)-desc
 //
 //
-/*
+
 void MoveToLeftCandidate (const Level_322_Desc & B,
                           Level_322_Desc & B_prime,
                           const LevelThreeTree & Y,
                           const Level_leq_2_Tree & T,
-                          const Level_leq_2_Tree & Q,
+                          //                     const Level_leq_2_Tree & Q,
                           const Level_leq_2_Tree & Q_prime,
-                          const DIRECTION & i,
-                          const Level_leq_2_TreeNode & q)
+                          const Level_leq_2_TreeNode & q,
+                          const DIRECTION & i)
 {
     if (B_prime.state == STATE::INVALID)
     {
         // starting
         B_prime = B;
         B_prime.DiscontinuousTrim();
+
         auto && sequence = B.sequence;
         auto && node_in_Y = Y.MyNodeInDomain (sequence);
 
         auto && critical_node = B.ucf_at_domain_node;
         auto && critical_direction = B.ucf_direction;
         auto && factor = B.factor;
-
 
 
         if (Degree (critical_node) == DEGREE::ONE)
@@ -7474,8 +7630,13 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
 
             Level_21_Desc critical_left (STATE::INVALID);
 
-            MoveToLeft (critical_21_desc, critical_left, T, Q, Q_prime, q);
+            MoveToLeft (critical_21_desc,
+                        critical_left,
+                        T,
+                        Q_prime.tree_1,
+                        std::get<1> (q) );
             // the next smaller desc
+
             if (node_in_Y->IsTerminal() )
             {
                 // nothing in T2 extending
@@ -7488,7 +7649,7 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
             else
             {
                 //find the biggest extension
-                auto && extend_node_in_Y = node_in_Y->BKLeft();
+                auto && extend_node_in_Y = node_in_Y->LastChild();
 
                 if (Y.Degree (extend_node_in_Y) == DEGREE::ZERO)
                 {
@@ -7500,7 +7661,7 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
                 {
                     // if the biggest extension of degree 1 or 2
                     auto && new_ucf = Y.SequenceMinusValue (extend_node_in_Y);
-                    auto && new_direction = Y.Direction(extend_node_in_Y);
+                    auto && new_direction = Y.Direction (extend_node_in_Y);
                     // find the ucf, extend it
                     B_prime.Extend_1 (extend_node_in_Y->LastEntry().first,
                                       std::move (critical_left),
@@ -7509,7 +7670,6 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
                     return;
                 }
             }
-
         }
 
         // now degree of ucf_ad_domain is 2
@@ -7517,10 +7677,9 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
 
         auto && critical_221_desc = factor.Value_2 (critical_node);
 
-
-        auto && Xx = Y.Value(node_in_Y);
-        // the partial level <=2 tree Y(y)
-
+        auto && Ww_plus = B_prime.final_tree_with_node;
+        auto && W_plus = Ww_plus.first;
+        auto && w = Ww_plus.second;
 
 
         Level_221_Desc critical_left (STATE::INVALID);
@@ -7531,20 +7690,10 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
             // the direction of ucf at Y is going left
             // operate with the final level-1 tree
 
-            auto && Ww = Xx.Tree_2().Value(Xx.NodeMinusInTree_2()->Parent());
-            // the hanging node in Xx is going left
-            // its parent is the same as NodeMinus's
-            // the level-1 tree to consider is the completion of the
-            //      partial level-1 tree at the common parent
 
-            LevelOneTreeNode * w;
-            auto && W = Ww.Completion(w);
-            // so we find the tree, complete it, and find a pointer to
-            //      the new node
-
-
-            MoveToLeft (critical_221_desc, critical_left, T, Q, Q_prime, i, q, W, w);
+            MoveToLeft (critical_221_desc, critical_left, T,  Q_prime, q, i, W_plus, w);
             // move to left under W,w and other parameters given
+            // here W_plus is just W, as moving left doisnt change the Level-1 tree
             return;
         }
         else
@@ -7552,28 +7701,13 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
             // the direction of ucf at Y is going down
             // operate with the final level-1 tree
 
-            auto && Ww = Xx.Tree_2().Value(Xx.NodeMinusInTree_2());
-            // the hanging node in Xx is going down
-            // its parent is NodeMinus
-            // the level-1 tree to consider is the both the tree ow Ww and  the completion of the
-            //      partial level-1 tree ow Ww
-
-
-            LevelOneTreeNode * w;
-            auto && W = Ww.Tree();
-            auto && W_plus = Ww.Completion(w);
-            // so we find the tree, complete it, and find a pointer to
-            //      the new node
-
-
-            MoveToLeft (critical_221_desc, critical_left, T, Q, Q_prime, q, W, W_plus, w);
+            MoveToLeft (critical_221_desc, critical_left, T,  Q_prime, q, W_plus, w);
             // move to left under W,w and other parameters given
             // i is always going downwards
             // not included in the parameter of the MoveToLeft function
             //
             return;
         }
-
     }
 
 
@@ -7581,39 +7715,69 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
     // want to move it left
     //
 
+    auto && critical_node = B.ucf_at_domain_node;
+    auto && critical_direction = B.ucf_direction;
+    auto && factor = B.factor;
 
     auto && node_in_Y = Y.MyNodeInDomain (B_prime.GetSequence() );
 
     auto && effective_length = B_prime.GetSequence().size();
 
-
     // later check if it properly extend the core part of C
     auto && effective_length_to_compare = B.GetSequence().size();
 
-    if (B_prime.IsDiscontinuousType_Star_As21Desc (Q, W_prime) )
+
+    if (B_prime.IsDiscontinuousType_Star (T, Q_prime) )
     {
-        //C'_effective part can be end extended as (Q,W')-desc
+        //B'_effective part can be end extended as (T,Q')-desc
 
-        Level_21_Desc critical_21_desc = B_prime.UCF_As21Desc();
-
-        //    unique_ptr<Level_21_Desc> critical_left;
-
-        if (effective_length > effective_length_to_compare)
+        if (Degree (B_prime.ucf_at_domain_node) == DEGREE::ONE)
         {
-            MoveToBKLeft (critical_21_desc, Q, W_prime);
-            //no problem extending
-        }
-        else
-        {
-            // this means C' is B_effective_part extended by
-            //  (D,-1), where D is the transitioning 21_Desc
-            // so C'_effective_part = B_effective_part
-            //
-            // need to find another D'<D, good transitioning extension
-            //
-            auto && bound_in_B =  B.UCF_As21Desc();
-            MoveToLeft (bound_in_B, critical_21_desc, Q, W, W_prime, w);
-            if (critical_21_desB.state == STATE::INVALID)
+            // degree 1
+
+            auto && critical_21_desc = B_prime.UCF_21_Desc();
+
+            //    unique_ptr<Level_21_Desc> critical_left;
+
+            Level_21_Desc critical_left (STATE::INVALID);
+
+            if (effective_length > effective_length_to_compare)
+            {
+                //no problem extending
+
+
+                // move to the last child of critical 21 desc
+                MoveToLeft (critical_21_desc,
+                            critical_left,
+                            T,
+                            Q_prime.tree_1,
+                            std::get<1> (q)
+                           );
+            }
+            else
+            {
+                // this means B' is B_effective_part extended by
+                //  (C,-1), where C is the transitioning 221_Desc
+                // so B'_effective_part = B_effective_part
+                //
+                // need to find another C'<C, good transitioning extension
+                //
+                auto && bound_in_B =  B.UCF_21_Desc();
+
+
+                critical_left = critical_21_desc;
+
+
+                critical_left = critical_21_desc;
+
+                MoveToLeft (bound_in_B,
+                            critical_left,
+                            T,
+                            Q_prime.tree_1,
+                            std::get<1> (q) );
+            }
+
+            if (critical_left.state == STATE::INVALID)
             {
                 //squeezed out
                 // no more
@@ -7621,110 +7785,697 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
                 return;
             }
             //found the good transition
-        }
-
-        // now critical_left is the extention of C'_effective part,
-        // need to find the node
 
 
-        if (node_in_Y->IsTerminal() )
-        {
-            // not extendable in Y
-            // use -1
-            B_prime.DiscontinuousTrim();
-            B_prime.Extend (std::move (critical_21_desc) );
-            return;
-        }
-        else
-        {
-            //find the biggest extension
-            auto && extend_node_in_Y = node_in_Y->BKLeft();
+            // now critical_left is the extention of B'_effective part,
+            // need to find the node
+
+            // note degree is never 0 as B' is *-disc type
 
 
-            if (Y.Degree (extend_node_in_Y) == DEGREE::ZERO)
+            // now the node has degree 2
+
+            // need to find the completion that matches (W,w)
+
+
+
+            // need to find the biggest extension whth (W,w)
+
+            auto extend_node_in_Y = node_in_Y->LastChild();
+
+
+            if (extend_node_in_Y == nullptr )
             {
-                // if the biggest extension of degree 0
+                // not extendable in Y
+                // use -1
+
                 B_prime.DiscontinuousTrim();
-                B_prime.Extend (extend_node_in_Y->LastEntry().first,
-                                std::move (critical_21_desc) );
+                B_prime.Extend_1 (std::move (critical_left) );
+
                 return;
             }
             else
             {
-                //if the beggest extension of degree 1
-                auto && new_ucf = Y.SequenceMinusValue (extend_node_in_Y);
-                // find the ucf, extend it
-                B_prime.DiscontinuousTrim();
+                // extend_node_in_Y is the good extension to use
 
-                B_prime.Extend (extend_node_in_Y->LastEntry().first,
-                                std::move (critical_21_desc),
-                                new_ucf);
-                return;
+                if (Y.Degree (extend_node_in_Y) == DEGREE::ZERO)
+                {
+                    // if the biggest extension of degree 0
+                    B_prime.DiscontinuousTrim();
+                    B_prime.Extend_1 (extend_node_in_Y->LastEntry().first,
+                                      std::move (critical_left) );
+                    return;
+                }
+                else
+                {
+                    //if the beggest extension of degree 1
+                    auto && new_ucf = Y.SequenceMinusValue (extend_node_in_Y);
+                    // find the ucf, extend it
+
+                    auto && new_direction = Y.Direction (extend_node_in_Y);
+
+                    B_prime.DiscontinuousTrim();
+                    B_prime.Extend_1 (extend_node_in_Y->LastEntry().first,
+                                      std::move (critical_left),
+                                      new_ucf,
+                                      new_direction);
+                    return;
+                }
+            }
+        }
+        else
+        {
+            // depraee 2
+            //B'_effective part can be end extended as (T,Q')-desc
+
+            auto && critical_221_desc = B_prime.UCF_221_Desc();
+
+            //    unique_ptr<Level_21_Desc> critical_left;
+
+            Level_221_Desc critical_left (STATE::INVALID);
+
+            if (effective_length > effective_length_to_compare)
+            {
+                //no problem extending
+
+                if (B_prime.ucf_direction == DIRECTION::LEFT)
+                {
+                    auto && critical_parent = factor.Value_2 (Parent (B.ucf_at_domain_node) );
+
+                    // move to the left with the same parent as critical 221 desc
+
+                    critical_left = critical_221_desc;
+                    B_prime.DiscontinuousTrim();
+                    MoveToLeft (critical_parent,
+                                critical_left,
+                                T,
+                                Q_prime,
+                                B_prime.final_tree_with_node.first,
+                                B_prime.final_tree_with_node.second);
+                    return;
+                }
+                else
+                {
+                    // move to the last child of critical 221 desc
+                    B_prime.DiscontinuousTrim();
+                    MoveToLeft (critical_221_desc,
+                                critical_left,
+                                T,
+                                Q_prime,
+                                B_prime.final_tree_with_node.first,
+                                B_prime.final_tree_with_node.second);
+                    return;
+                }
+            }
+            else
+            {
+                // this means B' is B_effective_part extended by
+                //  (C,-1), where C is the transitioning 221_Desc
+                // so B'_effective_part = B_effective_part
+                //
+                // need to find another C'<C, good transitioning extension
+                //
+                auto && bound_in_B =  B.UCF_221_Desc();
+
+                if (B_prime.ucf_direction == DIRECTION::LEFT)
+                {
+
+                    critical_left = critical_221_desc;
+                    B_prime.DiscontinuousTrim();
+
+                    MoveToLeft (bound_in_B,
+                                critical_left,
+                                T,
+                                Q_prime,
+                                q,
+                                i,
+                                B_prime.final_tree_with_node.first,
+                                B_prime.final_tree_with_node.second);
+                    return;
+                }
+                else
+                {
+
+                    critical_left = critical_221_desc;
+                    B_prime.DiscontinuousTrim();
+
+                    MoveToLeft (bound_in_B,
+                                critical_left,
+                                T,
+                                Q_prime,
+                                q,
+                                B_prime.final_tree_with_node.first,
+                                B_prime.final_tree_with_node.second);
+                    return;
+                }
+
+                if (critical_left.state == STATE::INVALID)
+                {
+                    //squeezed out
+                    // no more
+                    B_prime.state = STATE::INVALID;
+                    return;
+                }
+                //found the good transition
+            }
+
+            // now critical_left is the extention of B'_effective part,
+            // need to find the node
+
+            // note degree is never 0 as B' is *-disc type
+
+
+            // now the node has degree 2
+
+            // need to find the completion that matches (W,w)
+
+            auto && w = BaseUCF (critical_left, B_prime.final_tree_with_node.first);
+            auto && W = B_prime.final_tree_with_node.first;
+            // the base ucf of the critical left
+            //  to decide the level-2 tree X , added entry, ucf of partial <=1 tree
+
+
+            // need to find the biggest extension whth (W,w)
+
+            auto extend_node_in_Y = node_in_Y->LastChild();
+
+            while (extend_node_in_Y != nullptr)
+            {
+                if (  Match (
+                            FinalTreeWithNode (W, w ),
+                            Y.Final (extend_node_in_Y)   )
+                   )
+                    break;
+                extend_node_in_Y = extend_node_in_Y->Left();
+            }
+
+            if (extend_node_in_Y == nullptr )
+            {
+                // not extendable in Y
+                // use -1
+
+                if (w == nullptr)
+                {
+                    B_prime.DiscontinuousTrim();
+                    B_prime.Extend_20 (std::move (critical_left) );
+                    return;
+                }
+
+                else
+                {
+                    B_prime.DiscontinuousTrim();
+                    B_prime.Extend_21 (W.EntireEntry (w),
+                                       std::move (critical_left) );
+                    return;
+                }
+            }
+            else
+            {
+                // extend_node_in_Y is the good extension to use
+
+                if (w == nullptr)
+                {
+                    if (Y.Degree (extend_node_in_Y) == DEGREE::ZERO)
+                    {
+                        // if the biggest extension of degree 0
+                        B_prime.DiscontinuousTrim();
+                        B_prime.Extend_20 (extend_node_in_Y->LastEntry().first,
+                                           std::move (critical_left) );
+                        return;
+                    }
+                    else
+                    {
+                        //if the beggest extension of degree 1
+                        auto && new_ucf = Y.SequenceMinusValue (extend_node_in_Y);
+                        // find the ucf, extend it
+
+                        auto && new_direction = Y.Direction (extend_node_in_Y);
+
+                        B_prime.DiscontinuousTrim();
+                        B_prime.Extend_20 (extend_node_in_Y->LastEntry().first,
+                                           std::move (critical_left),
+                                           new_ucf,
+                                           new_direction);
+                        return;
+                    }
+                }
+                else
+                {
+
+                    auto && ucf_21 = W.EntireEntry (w);
+
+                    if (Y.Degree (extend_node_in_Y) == DEGREE::ZERO)
+                    {
+                        // if the biggest extension of degree 0
+                        B_prime.DiscontinuousTrim();
+                        B_prime.Extend_21 (extend_node_in_Y->LastEntry().first,
+                                           ucf_21,
+                                           std::move (critical_left) );
+                        return;
+                    }
+                    else
+                    {
+                        //if the beggest extension of degree 1
+                        auto && new_ucf = Y.SequenceMinusValue (extend_node_in_Y);
+                        // find the ucf, extend it
+
+                        auto && new_direction = Y.Direction (extend_node_in_Y);
+
+                        B_prime.DiscontinuousTrim();
+                        B_prime.Extend_21 (extend_node_in_Y->LastEntry().first,
+                                           ucf_21,
+                                           std::move (critical_left),
+                                           new_ucf,
+                                           new_direction);
+                        return;
+                    }
+                }
             }
         }
     }
     else
     {
-        //cannot extend B_effective_part
 
-        if (effective_length == effective_length_to_compare)
+        //B'_effective part cannod be extended
+        // must move
+
+        auto prev_node_in_Y = node_in_Y->Left();
+
+        while (prev_node_in_Y != nullptr)
         {
-            // C' is B_effective_part exteded by (D,-1), D not extendable
-            B_prime.state = STATE::INVALID;
-            return;
-            // get squeezed out
+            if (  Match (
+                        Y.Final (node_in_Y ),
+                        Y.Final (prev_node_in_Y)   )
+               )
+                break;
+            prev_node_in_Y = prev_node_in_Y->Left();
         }
 
-        //otherwise,
-        // if node_in_Y is the root, get sqeezed out
-        // if not, move to the left
-
-        if (node_in_Y->IsEmpty() )
+        if (prev_node_in_Y == nullptr )
         {
-            // it is (least desc, -1)
-            B_prime.state = STATE::INVALID;
-            return ;
-            // squezed out
-        }
-
-        //start moving
-
-        if (node_in_Y->Left() == nullptr)
-        {
-            // no left
-            // move to -1
+            // not extendable in Y
+            // use -1
             B_prime.DiscontinuousTrim();
             B_prime.MoveLastEntryInNode();
             return;
         }
         else
         {
-            //find the left
-            auto && left = node_in_Y->Left();
-            auto && last_entry_in_node = Y.LastEntryInDomain (left);
+            // prev_node_in_Y is the good extension to use
 
-            //
-            if (Y.Degree (left) == DEGREE::ZERO)
+            if (Y.Degree (prev_node_in_Y) == DEGREE::ZERO)
             {
-                // if the left of degree 0
+                // if the biggest extension of degree 0
                 B_prime.DiscontinuousTrim();
-                B_prime.MoveLastEntryInNode (last_entry_in_node);
-                //move it
+                B_prime.MoveLastEntryInNode (prev_node_in_Y->LastEntry().first );
                 return;
             }
             else
             {
-                //if the left of degree 1
-                // find the new ucf
-                auto && new_ucf = Y.SequenceMinusValue (left);
+                //if the beggest extension of degree 1
+                auto && new_ucf = Y.SequenceMinusValue (prev_node_in_Y);
+                // find the ucf, extend it
+
+                auto && new_direction = Y.Direction (prev_node_in_Y);
+
                 B_prime.DiscontinuousTrim();
-                B_prime.MoveLastEntryInNode (last_entry_in_node, new_ucf);
+                B_prime.MoveLastEntryInNode (prev_node_in_Y->LastEntry().first,
+                                             new_ucf,
+                                             new_direction);
                 return;
             }
         }
     }
-
 }
-*/
+
+
+bool ShowUpInSignStar (const leq_2_Sequence & q,
+                       const Level_21_Desc & D)
+{
+
+    if (std::get<0> (q) == DEGREE::ONE)
+    {
+
+        for (auto && i : D.enumeration)
+        {
+            if ( D.Degree() == DEGREE::ONE &&
+                    D.sequence_1 == std::get<1> (q) )
+                return true;
+        }
+        return false;
+    }
+    else
+    {
+        for (auto && i : D.enumeration)
+        {
+            if ( D.Degree() == DEGREE::TWO &&
+                    D.sequence_2 == std::get<2> (q) )
+                return true;
+        }
+        return false;
+    }
+}
+
+/*
+bool ShowUpInSign (const DoubleSequence & q,
+                   const Level_221_Desc & C){
+
+    for (auto && i : C.enumeration)
+    {
+        auto && D = C.factor.Value(i);
+        if (D.Degree() == DEGREE::TWO)
+        {
+            if (D.sequence_2 == q)
+                return true;
+        }
+    }
+    return false;
+}*/
+
+//given B, a (Y,T,(Q,q-,i)-desc
+// Q' is the completion of (Q,q,i), q is the hanging node in Q'\Q
+// B' is a candidate (Y,T,Q')-desc, produced by the MoveToLeftCandidate function, good at transition
+//verify if B' is a (Y,T,Q)-desc
+//
+bool Validate (const Level_322_Desc &     B,
+               const Level_322_Desc &     B_prime,
+               const LevelThreeTree &    Y,
+               const Level_leq_2_Tree &  T,
+               const Level_leq_2_Tree &  Q_prime,
+               const Level_leq_2_TreeNode & q,
+               const DIRECTION i)
+{
+    if (B_prime.state == STATE::INVALID)
+    {
+        return false;
+    }
+
+    if (B_prime.IsDiscontinuousTypeAtDomain() )
+    {
+        return true;
+    }
+
+    auto && effective_length = B_prime.GetSequence().size();
+
+    auto && effective_length_to_compare = B.GetSequence().size();
+
+    if (effective_length > effective_length_to_compare)
+    {
+        return true;
+    }
+
+    //now B' is B_effective_part plus (C, -1)
+    // we need to make sure of the well-behavior of C
+
+
+    auto && last_node_in_B_prime = B_prime.LastNodeInDomain();
+
+    if (Degree (last_node_in_B_prime) == DEGREE::ONE)
+    {
+        return true;
+    }
+
+    // now deg of las node in B' is 2
+
+    auto && W = B_prime.final_tree_with_node.first;
+
+    auto && critical_desc = B_prime.GetFactor().Value_2 (last_node_in_B_prime);
+    // the last 221 desc
+    auto && critical_factor = critical_desc.GetFactor();
+    // the last 121 factor in 221 desc
+
+    if ( critical_desc.IsDiscontinuousType (W) )
+    {
+        return true;
+    }
+
+    // now crit desc is W-cont type
+
+    // we cneck if q has shown up before last of critical_desc
+
+    for (auto && i = critical_desc.enumeration.begin(); i != critical_desc.enumeration.end() - 1; ++i)
+    {
+        if ( ShowUpInSignStar (Q_prime.EntireEntry (q), critical_factor.Value (*i) ) )
+            return true;
+    }
+    return false;
+}
+
+
+// given B, a (Y,T,Q)-desc
+// B' , either invalid (standing for starting the computation) or a (B,T,Q')-desc whose restriction to (T,Q) is B,
+// produce the left of B' whose restriction to (Y,T,Q) is still B
+//
+// Q' is the completion of (Q,q), q is the hanging node whose ucf in Q is going in the direction i
+//
+//  REMARK: B is a (Y,T, (Q,i,q-)-desc
+//
+//
+
+void MoveToLeft (const Level_322_Desc & B,
+                 Level_322_Desc & B_prime,
+                 const LevelThreeTree & Y,
+                 const Level_leq_2_Tree & T,
+                 //                     const Level_leq_2_Tree & Q,
+                 const Level_leq_2_Tree & Q_prime,
+                 const Level_leq_2_TreeNode & q,
+                 const DIRECTION & i)
+{
+    do
+    {
+        MoveToLeftCandidate (B, B_prime, Y, T, Q_prime, q, i);
+
+        if (B_prime.state == STATE::INVALID)
+        {
+            return;
+        }
+
+        if (Validate (B, B_prime, Y, T , Q_prime, q, i) )
+        {
+            return;
+        }
+    }
+    while (true);
+}
+
+typedef pair<LevelThreeTreeNode*, FuncTreeNode<SingleSequence, Level_322_Desc>*>
+Level_332_FactorNode;
+
+class Level_332_Factor
+{
+public:
+    LevelThreeTree domain;
+    FuncTree<SingleSequence, Level_322_Desc> factor;
+
+    friend void swap (Level_332_Factor & f, Level_332_Factor & g)
+    {
+        swap (f.domain, g.domain);
+        swap (f.factor, g.factor);
+    }
+
+    Level_332_Factor() = default;
+    Level_332_Factor (const Level_332_Factor & pi) = default;
+    Level_332_Factor (Level_332_Factor && pi)
+    {
+        swap (*this, pi);
+    }
+    Level_332_Factor& operator= (Level_332_Factor pi)
+    {
+        swap (*this, pi);
+        return *this;
+    }
+
+    unsigned long Cardinality() const
+    {
+        return factor.Cardinality();
+    }
+
+    // add a new node of degree 0 below root
+    Level_332_FactorNode  Add_0 (Level_322_Desc && B)
+    {
+        auto && d = domain.Add_0();
+        auto && i = ::Add ( factor,
+                            factor.Root(),
+                            DIRECTION::DOWN,
+                            std::move (B) );
+        return Level_332_FactorNode (std::move (d), std::move (i) );
+    }
+
+
+    // add a  new node of degree 1 below root
+    Level_332_FactorNode  Add_1 (Level_322_Desc && B)
+    {
+        auto && d = domain.Add_1();
+        auto && i = ::Add (factor,
+                           factor.Root(),
+                           DIRECTION::DOWN,
+                           std::move (B) );
+        return Level_332_FactorNode (std::move (d), std::move (i) );
+    }
+
+
+    // add a  new node of degree 2 below root
+    Level_332_FactorNode  Add_2 (Level_322_Desc && B)
+    {
+        auto && d = domain.Add_2();
+        auto && i = ::Add (factor,
+                           factor.Root(),
+                           DIRECTION::DOWN,
+                           std::move (B) );
+        return Level_332_FactorNode (std::move (d), std::move (i) );
+    }
+
+
+
+    // s has degree 1, so the value has a unique completion
+    // the new node has degree 0
+    // add a node , eithe child of s or an elder sister of s
+    Level_332_FactorNode  Add_10 (const Level_332_FactorNode & s,
+                                  const DIRECTION & i3,
+                                  Level_322_Desc && B)
+    {
+        auto && d = domain.Add_10 (s.first, i3);
+        auto && i = ::Add (factor, s.second, i3, std::move (B) );
+        return Level_332_FactorNode (std::move (d), std::move (i) );
+    }
+
+    // s has degree 1, so the value has a unique completion
+    // the new node has degree 1, with ucf ucf_31
+    //add a node , eithe child of s or an elder sister of s
+    Level_332_FactorNode  Add_11 (const Level_332_FactorNode & s,
+                                  const DIRECTION & i3,
+                                  const SingleSequence & ucf_31,
+                                  Level_322_Desc && B)
+    {
+        auto && d = domain.Add_11 (s.first, i3, ucf_31);
+        auto && i = ::Add (factor, s.second, i3, std::move (B) );
+        return Level_332_FactorNode (std::move (d), std::move (i) );
+    }
+
+
+    // s has degree 1, so the value has a unique completion
+    // add a new node in dhe diriciton i3
+    // the hanging node  of the new partial level <=2 treegoes in the direction i2, with ucf ucf_32
+    Level_332_FactorNode  Add_12 (const Level_332_FactorNode & s,
+                                  const DIRECTION & i3,
+                                  const DoubleSequence & ucf_32,
+                                  const DIRECTION & i2,
+                                  Level_322_Desc && B)
+    {
+        auto && d = domain.Add_12 (s.first, i3, ucf_32, i2);
+        auto && i =::Add (factor, s.second, i3, std::move (B) );
+        return Level_332_FactorNode (std::move (d), std::move (i) );
+    }
+
+
+    // s has degree 2,
+    // need to complete the tree by making degree 0 in the hanging node
+    //      in the level-2 part
+    // the new node has degree 0
+    //add a node , eithe child of s or an elder sister of s
+    Level_332_FactorNode  Add_200 (const Level_332_FactorNode & s,
+                                   const DIRECTION & i3,
+                                   Level_322_Desc && B
+                                  )
+
+    {
+        auto && d = domain.Add_200 (s.first, i3);
+        auto && i =::Add (factor, s.second, i3, std::move (B) );
+        return Level_332_FactorNode (std::move (d), std::move (i) );
+    }
+
+
+    // s has degree 2,
+    // need to complete the tree by making degree 0 in the hanging node
+    //      in the level-2 part
+    // the new node has degree 1, with ucf ucf_31
+    //add a node , eithe child of s or an elder sister of s
+    Level_332_FactorNode  Add_201 (const Level_332_FactorNode & s,
+                                   const DIRECTION & i3,
+                                   const SingleSequence & ucf_31,
+                                   Level_322_Desc && B)
+
+    {
+        auto && d = domain.Add_201 (s.first, i3, ucf_31);
+        auto && i =::Add (factor, s.second, i3, std::move (B) );
+        return Level_332_FactorNode (std::move (d), std::move (i) );
+    }
+
+
+    // s has degree 2,
+    // need to complete the tree by making degree 0 in the hanging node
+    //      in the level-2 part
+    // the new node has degree 2, with ucf ucf_32
+    //add a node , eithe child of s or an elder sister of s
+    Level_332_FactorNode  Add_202 (const Level_332_FactorNode & s,
+                                   const DIRECTION & i3,
+                                   const DoubleSequence & ucf_32,
+                                   const DIRECTION & i2,
+                                   Level_322_Desc && B
+                                  )
+
+    {
+        auto && d = domain.Add_202 (s.first, i3, ucf_32, i2);
+        auto && i =::Add (factor, s.second, i3,  std::move (B) );
+        return Level_332_FactorNode (std::move (d), std::move (i) );
+    }
+
+
+
+    // s has degree 2,
+    // need to complete the tree by making degree 1 in the hanging node
+    //      in the level-2 part, with ucf ucf_21
+    // the new node has degree 0
+    //add a node , eithe child of s or an elder sister of s
+    Level_332_FactorNode  Add_210 (const Level_332_FactorNode & s,
+                                   const DIRECTION & i3,
+                                   const SingleSequence & ucf_21,
+                                   Level_322_Desc && B)
+    {
+        auto && d = domain.Add_210 (s.first, i3, ucf_21);
+        auto && i =::Add (factor, s.second, i3, std::move (B) );
+        return Level_332_FactorNode (std::move (d), std::move (i) );
+    }
+
+
+    // s has degree 2,
+    // need to complete the tree by making degree 0 in the hanging node
+    //      in the level-2 part
+    // the new node has degree 1, with ucf ucf_31
+    //add a node , eithe child of s or an elder sister of s
+    Level_332_FactorNode  Add_211 (const Level_332_FactorNode & s,
+                                   const DIRECTION & i3,
+                                   const SingleSequence & ucf_21,
+                                   const  SingleSequence & ucf_31,
+                                   Level_322_Desc && B)
+
+    {
+        auto && d = domain.Add_211 (s.first, i3, ucf_21, ucf_31);
+        auto && i =::Add (factor, s.second, i3,  std::move (B) );
+        return Level_332_FactorNode (std::move (d), std::move (i) );
+    }
+
+
+    // s has degree 2,
+    // need to complete the tree by making degree 1 in the hanging node
+    //      in the level-2 part, with ucf ucf_21
+    // the new node has degree 2, with direction i2 and ucf ucf_32
+    //add a node , eithe child of s or an elder sister of s
+    Level_332_FactorNode  Add_212 (const Level_332_FactorNode & s,
+                                   const DIRECTION & i3,
+                                   const SingleSequence & ucf_21,
+                                   const DoubleSequence & ucf_32,
+                                   const DIRECTION & i2,
+                                   Level_322_Desc && B
+                                  )
+    {
+        auto && d = domain.Add_212 (s.first, i3, ucf_21, ucf_32, i2);
+        auto && i =::Add (factor, s.second, i3, std::move (B) );
+        return Level_332_FactorNode (std::move (d), std::move (i) );
+    }
+
+
+};
 
 #endif // SHARP_H_INCLUDED
+
