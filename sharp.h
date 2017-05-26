@@ -8585,13 +8585,13 @@ bool ShowUpInSignStar (const leq_2_Sequence & q,
 {
     if (std::get<0> (q) == DEGREE::ONE)
     {
-        for (auto && i : D.enumeration)
-        {
             if ( D.Degree() == DEGREE::ONE &&
                     D.sequence_1 == std::get<1> (q) )
                 return true;
-        }
-        return false;
+            else{
+                return false;
+            }
+
     }
     else
     {
@@ -8719,6 +8719,11 @@ bool Validate (const Level_322_Desc &     B,
     
     for (auto && i = critical_desc.enumeration.begin(); i != critical_desc.enumeration.end() - 1; ++i)
     {
+        cout<<"checking pos 8:"<<endl;
+        cout<<"q:"<<String(Q_prime.EntireEntry(q))<<endl;
+        cout<<"critical factor (i): "<<String(critical_factor.Value (*i))<<endl;
+        
+        
         if ( ShowUpInSignStar (Q_prime.EntireEntry (q), critical_factor.Value (*i) ) )
         
         {
