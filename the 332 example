@@ -1,4 +1,3 @@
-
 Immediate successors of Y at () forms a level-1 tree Y{()} :
 
   Input the level-1 tree Y{()}
@@ -43,7 +42,7 @@ Immediate successors of Y at ((0)) forms a level-1 tree Y{((0))} :
     What is the degree of the hanging node ? 2
     Possible values of the hanging node: 
     1. ((0) (0))    2. ((1))    3. ((0 0))
-  Which one? 2
+  Which one? 1
 ((0) (0)) has degree 0. It must be terminal
 Immediate successors of Y at ((0) (1)) forms a level-1 tree Y{((0) (1))} :
 
@@ -91,4 +90,5 @@ Input the level <=2 tree T
 
 Level <=2 tree T input complete!
 U
-143
+101
+
