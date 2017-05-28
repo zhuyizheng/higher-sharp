@@ -36,7 +36,7 @@ enum class STATE
     VALID, INVALID
 };
 
-string String (const DIRECTION & d)
+string to_string (const DIRECTION & d)
 {
     if (d == DIRECTION::NA)
     {
@@ -48,7 +48,7 @@ string String (const DIRECTION & d)
     }
     return "LEFT";
 }
-string String (const DEGREE & d)
+string to_string (const DEGREE & d)
 {
     if (d == DEGREE::ONE)
     {
@@ -180,30 +180,30 @@ constexpr Level_332_FactorNode zeroLevel_332_FactorNode = Level_332_FactorNode (
 
 class Level_332_Factor;
 
-string String (const Level_21_Desc & D,
+string to_string (const Level_21_Desc & D,
                const unsigned & d = 0);
 
-string String (const leq_2_Sequence & s);
+string to_string (const leq_2_Sequence & s);
 
-string String (const Level_221_Desc & C,
+string to_string (const Level_221_Desc & C,
                const unsigned & d = 0);
-string String (const Level_322_Desc & B,
+string to_string (const Level_322_Desc & B,
                const unsigned & d = 0);
 
 
-string String (const LevelOneTree & Q,
+string to_string (const LevelOneTree & Q,
                const unsigned & d = 0);
-string String (const Level_leq_2_Tree & Q,
+string to_string (const Level_leq_2_Tree & Q,
                const unsigned & d = 0);
-string String (const LevelTwoTree & Q,
+string to_string (const LevelTwoTree & Q,
                const unsigned & d = 0);
-string String (const PartialLevel_leq_2_Tree & Q,
+string to_string (const PartialLevel_leq_2_Tree & Q,
                const unsigned & d = 0);
-string String (const LevelThreeTree & Q,
+string to_string (const LevelThreeTree & Q,
                const unsigned & d = 0);
-string String (const Level_332_Factor & Q,
+string to_string (const Level_332_Factor & Q,
                const unsigned & d = 0);
-string String (const Level_222_Factor & Q,
+string to_string (const Level_222_Factor & Q,
                const unsigned & d = 0);
 
 //
@@ -285,13 +285,10 @@ string EmptyString (unsigned long d)
 {
     return string (d, ' ');
 }
-// produces a string out of an integer
-string String (const unsigned long & k)
-{
-    return to_string (k);
-}
+
+
 // produces a string out of a single vector
-string String (const vector<unsigned long> & k)
+string to_string (const vector<unsigned long> & k)
 {
 
     if (k.empty() )
@@ -308,7 +305,7 @@ string String (const vector<unsigned long> & k)
     return output;
 }
 //produces a string out of a double vector
-string String (const vector<vector<unsigned long>> & k)
+string to_string (const vector<vector<unsigned long>> & k)
 {
     if (k.empty() )
     {
@@ -317,7 +314,7 @@ string String (const vector<vector<unsigned long>> & k)
     string output = "(";
     for (auto && i : k)
     {
-        output += String (i) + " ";
+        output += to_string (i) + " ";
     }
     output.pop_back();
     output += ")";
@@ -325,18 +322,18 @@ string String (const vector<vector<unsigned long>> & k)
 }
 
 
-string String (const vector<tuple<int, SingleSequence, SingleSequence>> & r)
+string to_string (const vector<tuple<int, SingleSequence, SingleSequence>> & r)
 {
     string output;
     for (auto && i : r)
     {
         if (std::get<0> (i) == 2)
         {
-            output += String (std::get<2> (i) );
+            output += to_string (std::get<2> (i) );
         }
         else if (std::get<0> (i) == 1)
         {
-            output += String (std::get<1> (i) );
+            output += to_string (std::get<1> (i) );
         }
         else
         {
@@ -346,7 +343,7 @@ string String (const vector<tuple<int, SingleSequence, SingleSequence>> & r)
     return output;
 }
 
-string String (const vector<tuple<int, SingleSequence, Level_21_Desc>> & r);
+string to_string (const vector<tuple<int, SingleSequence, Level_21_Desc>> & r);
 
 
 
@@ -363,6 +360,12 @@ class TreeNode
     friend class LevelThreeTree;
     template <typename>
     friend class LevelTwoTreeBasedDesc;
+    
+    friend void Flatten (Tree<unsigned long> &);
+    template <typename VALUETYPE>
+    friend void Flatten (FuncTree<unsigned long, VALUETYPE> & f);
+    template <typename VALUETYPE>
+    friend void Flatten (FuncTree<SingleSequence, VALUETYPE> & f);
     
 private:
     TYPE                    last_entry;
@@ -592,8 +595,13 @@ class Tree
     friend class LevelThreeTree;
     template <typename>
     friend class LevelTwoTreeBasedDesc;
+    friend void Flatten (Tree<unsigned long> & f);
     
-private:
+template <typename VALUETYPE>
+void Flatten (FuncTree<unsigned long,VALUETYPE> &);
+    
+    
+public:
 
     unsigned long cardinality;
     TreeNode<TYPE> * root;
@@ -606,6 +614,18 @@ public:
         cardinality (c),
         root (r)
     {}
+    
+    unsigned long RankAmongSiblings (const TreeNode<TYPE>* const s) const
+    {
+        unsigned long r = 0;
+        auto current = s->Left();
+        while (current != nullptr)
+        {
+            ++r;
+            current = current->Left();
+        }
+        return r;
+    }
     
     TreeNode<TYPE>* NodeInNaturalNumberOrder (const vector<unsigned long> & s) const
     {
@@ -873,7 +893,7 @@ public:
         return output;
     }
     
-    string String (const TreeNode<TYPE>* const s) const
+    string to_string (const TreeNode<TYPE>* const s) const
     // writes the entry of s into a string
     {
         auto && h = EntireEntry (s);
@@ -884,7 +904,7 @@ public:
         string output = "(";
         for (auto && i : h)
         {
-            output += ::String (i) + " ";
+            output += ::to_string (i) + " ";
         }
         output.pop_back();
         output += ")";
@@ -894,7 +914,7 @@ public:
     
     void Show (const TreeNode<TYPE>* const s) const
     {
-        cout << "Node: " << String (s) << endl;
+        cout << "Node: " << to_string (s) << endl;
         cout << "number of children: " << s->number_of_children << endl;
         if (s->BKleft == nullptr)
         {
@@ -902,7 +922,7 @@ public:
         }
         else
         {
-            cout << "  BKleft: " << String (s->BKleft) << endl;
+            cout << "  BKleft: " << to_string (s->BKleft) << endl;
         }
         if (s->BKright == nullptr)
         {
@@ -910,7 +930,7 @@ public:
         }
         else
         {
-            cout << "  BKright: " << String (s->BKright) << endl;
+            cout << "  BKright: " << to_string (s->BKright) << endl;
         }
         if (s->parent == nullptr)
         {
@@ -918,7 +938,7 @@ public:
         }
         else
         {
-            cout << "  parent: " << String (s->parent) << endl;
+            cout << "  parent: " << to_string (s->parent) << endl;
         }
         if (s->first_child == nullptr)
         {
@@ -926,7 +946,7 @@ public:
         }
         else
         {
-            cout << "  first_child: " << String (s->first_child) << endl;
+            cout << "  first_child: " << to_string (s->first_child) << endl;
         }
         if (s->last_child == nullptr)
         {
@@ -934,7 +954,7 @@ public:
         }
         else
         {
-            cout << "  last_child: " << String (s->last_child) << endl;
+            cout << "  last_child: " << to_string (s->last_child) << endl;
         }
         if (s->left == nullptr)
         {
@@ -942,7 +962,7 @@ public:
         }
         else
         {
-            cout << "  left: " << String (s->left) << endl;
+            cout << "  left: " << to_string (s->left) << endl;
         }
         if (s->right == nullptr)
         {
@@ -950,13 +970,13 @@ public:
         }
         else
         {
-            cout << "  right: " << String (s->right) << endl;
+            cout << "  right: " << to_string (s->right) << endl;
         }
     }
     
     void ShowDomain (const TreeNode<TYPE>* const s) const
     {
-        cout << "Node: " <<::String (s->last_entry.first) << endl;
+        cout << "Node: " <<::to_string (s->last_entry.first) << endl;
         cout << "number of children: " << s->number_of_children << endl;
         if (s->BKleft == nullptr)
         {
@@ -964,7 +984,7 @@ public:
         }
         else
         {
-            cout << "  BKleft: " <<::String (s->BKleft->last_entry.first) << endl;
+            cout << "  BKleft: " <<::to_string (s->BKleft->last_entry.first) << endl;
         }
         if (s->BKright == nullptr)
         {
@@ -972,7 +992,7 @@ public:
         }
         else
         {
-            cout << "  BKright: " <<::String (s->BKright->last_entry.first) << endl;
+            cout << "  BKright: " <<::to_string (s->BKright->last_entry.first) << endl;
         }
         if (s->parent == nullptr)
         {
@@ -980,7 +1000,7 @@ public:
         }
         else
         {
-            cout << "  parent: " <<::String (s->parent->last_entry.first) << endl;
+            cout << "  parent: " <<::to_string (s->parent->last_entry.first) << endl;
         }
         if (s->first_child == nullptr)
         {
@@ -988,7 +1008,7 @@ public:
         }
         else
         {
-            cout << "  first_child: " <<::String (s->first_child->last_entry.first) << endl;
+            cout << "  first_child: " <<::to_string (s->first_child->last_entry.first) << endl;
         }
         if (s->last_child == nullptr)
         {
@@ -996,7 +1016,7 @@ public:
         }
         else
         {
-            cout << "  last_child: " <<::String (s->last_child->last_entry.first) << endl;
+            cout << "  last_child: " <<::to_string (s->last_child->last_entry.first) << endl;
         }
         if (s->left == nullptr)
         {
@@ -1004,7 +1024,7 @@ public:
         }
         else
         {
-            cout << "  left: " <<::String (s->left->last_entry.first) << endl;
+            cout << "  left: " <<::to_string (s->left->last_entry.first) << endl;
         }
         if (s->right == nullptr)
         {
@@ -1012,7 +1032,7 @@ public:
         }
         else
         {
-            cout << "  right: " <<::String (s->right->last_entry.first) << endl;
+            cout << "  right: " <<::to_string (s->right->last_entry.first) << endl;
         }
     }
     
@@ -1137,9 +1157,19 @@ public:
 //   bool ContainsElement(const TreeNode<TYPE> * const s) const;
 
 
-//   unsigned long Rank(const TreeNode<TYPE> * const s) const;
-
-
+    unsigned long Rank (const TreeNode<TYPE> * const s) const
+    {
+        unsigned long r = 0;
+        auto current = s->BKLeft();
+        while (current != nullptr)
+        {
+            ++r;
+            current = current->BKLeft();
+        }
+        return r;
+    }
+    
+    
 //  trying universal reference and perfect forwarding
 //
     template <typename A>
@@ -1347,11 +1377,11 @@ public:
 
 
 template <typename ENTRYTYPE, typename VALUETYPE>
-string String (const TreeNode<pair<ENTRYTYPE, VALUETYPE>> & k)
+string to_string (const TreeNode<pair<ENTRYTYPE, VALUETYPE>> & k)
 {
-    string output = String (k.Entry().first);
+    string output = to_string (k.Entry().first);
     output += "|-->";
-    output += String (k.Entry().second);
+    output += to_string (k.Entry().second);
     return output;
 }
 
@@ -1487,7 +1517,7 @@ public:
         string output = "(";
         for (auto && i : h)
         {
-            output += ::String (i) + " ";
+            output += ::to_string (i) + " ";
         }
         output.pop_back();
         output += ")";
@@ -1610,7 +1640,69 @@ FuncTreeNode<unsigned long, VALUETYPE> * AddChildBelow (
     return AddChildBelow (f, f.MyNodeInDomain (s), std::forward<A> (new_in_image) );
 }
 
+void Flatten (Tree<unsigned long> & f)
+{
+    if (f.IsTrivial())
+        return;
+    TreeNode<unsigned long> * current = f.SmallestNode();
+    current->parent = f.root;
+    f.root->first_child = current;
+    
+    unsigned long r = 0;
+    
+    while (current->BKright != f.Root() )
+    {
+        TreeNode<unsigned long> * next = current->BKright;
+        current->right = next;
+        next->left = current;
+        
+        current->parent = f.root;
+        
+        current->length = 1;
+        current->last_entry = r;
+        ++r;
+        current = current->BKright;
+    }
+    current->last_entry = r;
+}
 
+template <typename VALUETYPE>
+void Flatten (FuncTree<unsigned long, VALUETYPE> & f)
+{
+    if (f.IsTrivial())
+        return;
+    FuncTreeNode<unsigned long, VALUETYPE> * current = f.SmallestNode();
+    current->parent = f.root;
+    f.root->first_child = current;
+    
+    unsigned long r = 0;
+    
+    while (current->BKright != f.Root() )
+    {
+        FuncTreeNode<unsigned long, VALUETYPE> * next = current->BKright;
+        current->right = next;
+        next->left = current;
+        
+        current->parent = f.root;
+        
+        current->length = 1;
+        current->last_entry.first = r;
+        ++r;
+        current = current->BKright;
+    }
+    current->last_entry.first = r;
+}
+
+template <typename VALUETYPE>
+void Flatten (FuncTree<SingleSequence, VALUETYPE> & f)
+{
+    FuncTreeNode<SingleSequence, VALUETYPE> * current = f.Root()->FirstChild();
+    while (current != nullptr)
+    {
+        current->last_entry.first = SingleSequence {f.RankAmongSiblings (current) };
+        current = f.NextEnumerate (current);
+    }
+}
 
 
 // a template of adding child below in a function
@@ -1732,14 +1824,14 @@ class LevelOneTree : public Tree<unsigned long>
     //a level-1 tree
     
 public:
-    string String (const unsigned & d = 0) const
+    string to_string (const unsigned & d = 0) const
     {
         string output = EmptyString (d);
         for (auto && i = SmallestNode();
                 i != Root();
                 i = i->BKRight() )
         {
-            output += ::String (EntireEntry (i) );
+            output += ::to_string (EntireEntry (i) );
         }
         return output;
     }
@@ -1786,7 +1878,7 @@ public:
         cout << EmptyString (d) << "Input the level-1 tree " << name << endl;
         while (true)
         {
-            cout << EmptyString (d + indent) << "How many immediate successors of " << ::String (EntireEntry (current) ) << " ? ";
+            cout << EmptyString (d + indent) << "How many immediate successors of " << ::to_string (EntireEntry (current) ) << " ? ";
             unsigned long k;
             cin >> k;
             
@@ -2062,7 +2154,7 @@ private:
         for (auto e = K.SmallestNode(); e != K.Root(); e = e->BKRight() )
         {
             cout << endl << EmptyString (d) << "Possible values of the node component of " << name << " at "
-                 << ::String (K.EntireEntry (e) ) << ":" << endl;
+                 << ::to_string (K.EntireEntry (e) ) << ":" << endl;
                  
             for (unsigned long i = pp.size(); i != 0; --i)
             {
@@ -2070,7 +2162,7 @@ private:
                 auto newnode = P.CreateHangingSequenceFromUCF (pp [i - 1]);
                 
                 cout << EmptyString (d + indent) << pp.size() - i + 1 << ". "
-                     << ::String (newnode);
+                     << ::to_string (newnode);
             }
             cout << EmptyString (d + indent) << pp.size() + 1 << ". "
                  << "-1";
@@ -2130,7 +2222,7 @@ public:
         return output;
     }
     
-    string String (const unsigned long & d = 0) const
+    string to_string (const unsigned long & d = 0) const
     {
     
         auto current_tree = Root();
@@ -2178,7 +2270,7 @@ public:
                 }
                 else
                 {
-                    output += ::String (CreateHangingSequence (current_tree) );
+                    output += ::to_string (CreateHangingSequence (current_tree) );
                 }
                 output += "\n";
                 
@@ -2230,7 +2322,7 @@ public:
             }
             else
             {
-                output += ::String (CreateHangingSequence (current_tree) );
+                output += ::to_string (CreateHangingSequence (current_tree) );
             }
             output += "\n";
             
@@ -2264,7 +2356,7 @@ public:
         
         while (true)
         {
-            string nodename = ::String (EntireEntryInDomain (current) );
+            string nodename = ::to_string (EntireEntryInDomain (current) );
             
             
             LevelOneTree  K ;
@@ -2539,7 +2631,7 @@ class Level_leq_2_Tree
 
 public:
 
-    string String (const Level_leq_2_TreeNode & q) const
+    string to_string (const Level_leq_2_TreeNode & q) const
     {
         if (std::get<0> (q) == DEGREE::ZERO)
         {
@@ -2547,22 +2639,22 @@ public:
         }
         if (std::get<0> (q) == DEGREE::ONE)
         {
-            return "(1, " + ::String (tree_1.EntireEntry (std::get<1> (q) ) ) + ")";
+            return "(1, " + ::to_string (tree_1.EntireEntry (std::get<1> (q) ) ) + ")";
         }
-        return "(2, " + ::String (tree_2.EntireEntryInDomain (std::get<2> (q) ) ) + ")";
+        return "(2, " + ::to_string (tree_2.EntireEntryInDomain (std::get<2> (q) ) ) + ")";
         
     }
     
-    string String (const unsigned & d = 0) const
+    string to_string (const unsigned & d = 0) const
     {
         string output;
         output += EmptyString (d) ;
         output += "Level-1 component: ";
-        output += ::String (tree_1);
+        output += ::to_string (tree_1);
         output += "\n";
         output += EmptyString (d) ;
         output += "Level-2 component:\n";
-        output += ::String (tree_2, d + indent);
+        output += ::to_string (tree_2, d + indent);
         return output;
     }
     
@@ -3166,19 +3258,19 @@ public:
     }
     
     
-    string String (const unsigned d = 0) const
+    string to_string (const unsigned d = 0) const
     {
         //formats it into a string
         string s = EmptyString (d) + "degree: ";
         if (degree == DEGREE::ONE)
         {
             s += "1\n";
-            s += EmptyString (d) + "node: " + ::String (sequence_1) + "\n";
+            s += EmptyString (d) + "node: " + ::to_string (sequence_1) + "\n";
         }
         else
         {
             s += "2\n";
-            s += EmptyString (d) + "node: " + ::String (sequence_2);
+            s += EmptyString (d) + "node: " + ::to_string (sequence_2);
             if (sequence_2.empty() )
             {
                 if (IsContinuousTypeAtDomain() )
@@ -3200,12 +3292,12 @@ public:
             for (auto && p : enumeration )
             {
             
-                string factor_string = ::String (factor.EntireEntryInDomain (p) );
+                string factor_string = ::to_string (factor.EntireEntryInDomain (p) );
                 factor_string += "|-->";
-                factor_string += ::String (factor.Value (p) );
+                factor_string += ::to_string (factor.Value (p) );
                 s += EmptyString (d + indent) + factor_string + "\n";
             }
-//           s+= "Representation: "+ ::String(Representation()) + "\n";
+//           s+= "Representation: "+ ::to_string(Representation()) + "\n";
 
         }
         
@@ -3219,12 +3311,12 @@ public:
         if (degree == DEGREE::ONE)
         {
             s += "1\n";
-            s += EmptyString (d) + "node: " + ::String (sequence_1) + "\n";
+            s += EmptyString (d) + "node: " + ::to_string (sequence_1) + "\n";
         }
         else
         {
             s += "2\n";
-            s += EmptyString (d) + "node: " + ::String (sequence_2);
+            s += EmptyString (d) + "node: " + ::to_string (sequence_2);
             if (sequence_2.empty() )
             {
                 if (IsContinuousTypeAtDomain() )
@@ -3247,12 +3339,12 @@ public:
             for (auto &&  p : enumeration )
             {
             
-                string factor_string = ::String (factor.EntireEntryInDomain (p) );
+                string factor_string = ::to_string (factor.EntireEntryInDomain (p) );
                 factor_string += "|--> the following level-21 desc:\n" ;
-                factor_string += factor.Value (p).String (d + indent);
+                factor_string += factor.Value (p).to_string (d + indent);
                 s += EmptyString (d + indent) + factor_string + "\n";
             }
-//           s+= "Representation: "+ ::String(Representation()) + "\n";
+//           s+= "Representation: "+ ::to_string(Representation()) + "\n";
 
         }
         
@@ -3345,12 +3437,12 @@ public:
         
         if (Q.Degree (q) == DEGREE::ZERO)
         {
-            Extend (add_sequence, std::forward<B>(new_in_image));
+            Extend (add_sequence, std::forward<B> (new_in_image) );
         }
         else
         {
             auto && new_ucf = Q.SequenceMinusValue (q);
-            Extend (add_sequence, std::forward<B>(new_in_image), new_ucf);
+            Extend (add_sequence, std::forward<B> (new_in_image), new_ucf);
         }
     }
     
@@ -3362,7 +3454,7 @@ public:
                  B && new_in_image)
     {
     
-        Extend (Q.tree_2, std::get<2> (q), std::forward<B>(new_in_image));
+        Extend (Q.tree_2, std::get<2> (q), std::forward<B> (new_in_image) );
     }
     
     
@@ -3606,11 +3698,11 @@ void MoveToBKLeft (Level_21_Desc & D,
         // it must be put on the next entry
         
         D.DiscontinuousTrim();
-        D.Extend(Q2,
-                 node->LastChild(),
-                 W.EntireEntry(new_in_image));
+        D.Extend (Q2,
+                  node->LastChild(),
+                  W.EntireEntry (new_in_image) );
         return;
-   }
+    }
     else
     {
         D.DiscontinuousTrim();
@@ -3660,8 +3752,8 @@ void MoveToBKLeft (Level_21_Desc & D,
         {
             // move the last bit in Q2
             
-            D.MoveLastEntryInNode(Q2,
-                                  node->Left()
+            D.MoveLastEntryInNode (Q2,
+                                   node->Left()
                                   );
             return;
         }
@@ -3708,12 +3800,12 @@ void MoveToLeft (const Level_21_Desc & D,
         const auto & Q2 = Q.tree_2;
         auto && critical_node = Q2.MyNodeInDomain (D_prime.GetSequence_2() );
         
-        D_prime.Extend(Q2,
-                       critical_node->LastChild(),
-                       std::move(w_sequence));
+        D_prime.Extend (Q2,
+                        critical_node->LastChild(),
+                        std::move (w_sequence) );
         return;
         
-      /*     return BKLeft(D, Q, W_prime);*/
+        /*     return BKLeft(D, Q, W_prime);*/
     }
     // the first on the left of D is the (Q,W')-left
     
@@ -3776,6 +3868,8 @@ Level_121_Factor TensorProduct (const Level_leq_2_Tree & Q, const LevelOneTree &
         MoveToBKLeft (D, Q, W);
     }
     
+    Flatten (output);
+    
     return output;
     
 }
@@ -3801,8 +3895,6 @@ void MoveToLeftCandidate (const Level_221_Desc & C,
                           const LevelOneTree & W_prime,
                           const LevelOneTreeNode * w)
 {
-
-
     const auto & T2 = T.tree_2;
     
     if (C_prime.state == STATE::INVALID)
@@ -3833,9 +3925,9 @@ void MoveToLeftCandidate (const Level_221_Desc & C,
                 }*/
         // automatic, for future ease of 332 factor computation
         
-        C_prime.Extend (T2, 
+        C_prime.Extend (T2,
                         node_in_T2->LastChild(),
-                        std::move(critical_left));
+                        std::move (critical_left) );
         return;
     }
     
@@ -3873,25 +3965,25 @@ void MoveToLeftCandidate (const Level_221_Desc & C,
             //
             auto && bound_in_C =  C.UCF_As21Desc();
             MoveToLeft (bound_in_C, critical_21_desc, Q,  W_prime, w);
-
+            
             //found the good transition
         }
         
         
         if (critical_21_desc.state == STATE::INVALID)
-            {
-                //squeezed out
-                // no more
-                C_prime.state = STATE::INVALID;
-                return;
-            }
+        {
+            //squeezed out
+            // no more
+            C_prime.state = STATE::INVALID;
+            return;
+        }
         // now critical_left is the extention of C'_effective part,
         // need to find the node
         
         C_prime.DiscontinuousTrim();
-        C_prime.Extend(T2,
-                       node_in_T2->LastChild(),
-                       std::move(critical_21_desc));
+        C_prime.Extend (T2,
+                        node_in_T2->LastChild(),
+                        std::move (critical_21_desc) );
         return;
     }
     else
@@ -3921,8 +4013,8 @@ void MoveToLeftCandidate (const Level_221_Desc & C,
         //start moving
         
         C_prime.DiscontinuousTrim();
-        C_prime.MoveLastEntryInNode(T2,
-                                    node_in_T2->Left());
+        C_prime.MoveLastEntryInNode (T2,
+                                     node_in_T2->Left() );
         return;
     }
 }
@@ -3938,7 +4030,6 @@ bool Validate (const Level_221_Desc &     C,
                const Level_221_Desc &     C_prime,
                const Level_leq_2_Tree &  T,
                const Level_leq_2_Tree &  Q,
-               //           const LevelOneTree & W,
                const LevelOneTree & W_prime,
                const LevelOneTreeNode * w)
 {
@@ -3948,9 +4039,6 @@ bool Validate (const Level_221_Desc &     C,
         return false;
     }
     
-    auto && T2 = T.tree_2;
-    
-    //  auto && node_in_T2 = T2.MyNodeInDomain (C_prime.GetSequence_2() );
     
     if (C_prime.IsDiscontinuousTypeAtDomain() )
     {
@@ -4002,7 +4090,6 @@ void MoveToLeft (const Level_221_Desc &     C,
                  const LevelOneTree & W_prime,
                  const LevelOneTreeNode * w)
 {
-
     MoveToLeftCandidate (C, C_prime, T, Q,  W_prime, w);
     
     do
@@ -4068,7 +4155,7 @@ public:
     
 public:
 
-    string String (const unsigned & d = 0) const
+    string to_string (const unsigned & d = 0) const
     {
         // only implemented level 2 part!!
         
@@ -4078,11 +4165,11 @@ public:
         while (i != nullptr)
         {
             output += EmptyString (d);
-            output += ::String (domain.tree_2.EntireEntryInDomain (i) );
+            output += ::to_string (domain.tree_2.EntireEntryInDomain (i) );
             
             output += " |---> the following 221 desc:\n";
             
-            output += ::String (j->LastEntry().second, d + indent);
+            output += ::to_string (j->LastEntry().second, d + indent);
             output += "\n";
             i = domain.tree_2.NextEnumerate (i);
             j = factor_2.NextEnumerate (j);
@@ -4090,7 +4177,7 @@ public:
         return output;
     }
     
-
+    
     friend void swap (Level_222_Factor & f, Level_222_Factor & g)
     {
         swap (f.domain, g.domain);
@@ -4505,7 +4592,6 @@ public:
         auto & X = domain;
         auto & X2 = X.tree_2;
         
-        auto && W = X2.Value (n_tree).Tree();
         auto && w_node = X2.Value (n_tree).NodeMinusInTree();
         
         if (w_node == nullptr)
@@ -4672,6 +4758,11 @@ Level_222_Factor TensorProduct (const Level_leq_2_Tree & T, const Level_leq_2_Tr
         }
         if (current_factor == nullptr)
         {
+            // output!!!
+            Flatten (pi.domain.tree_1);
+            Flatten (pi.domain.tree_2);
+            Flatten (pi.factor_1);
+            Flatten (pi.factor_2);
             return pi;
         }
         current_factor = current_factor->Left();
@@ -4759,7 +4850,7 @@ unsigned long DynamicTensorProduct (const Level_leq_2_Tree & T,
                     }
                 }
                 myfile << "+" << string (interval, '-');
-                myfile << String (pi.domain.tree_2.CreateHangingSequence (current_tree) ) << endl;
+                myfile << to_string (pi.domain.tree_2.CreateHangingSequence (current_tree) ) << endl;
                 
                 continue;
             }
@@ -4823,7 +4914,7 @@ unsigned long DynamicTensorProduct (const Level_leq_2_Tree & T,
                 }
             }
             myfile << "+" << string (interval, '-');
-            myfile << String (pi.domain.tree_2.CreateHangingSequence (current_tree) ) << endl;
+            myfile << to_string (pi.domain.tree_2.CreateHangingSequence (current_tree) ) << endl;
             
         }
         
@@ -4960,18 +5051,18 @@ unsigned long DynamicTensorProduct (const Level_leq_2_Tree & T,
 
 
 
-string String (const vector<tuple<int, SingleSequence, Level_21_Desc>> & r)
+string to_string (const vector<tuple<int, SingleSequence, Level_21_Desc>> & r)
 {
     string output;
     for (auto && i : r)
     {
         if (std::get<0> (i) == 2)
         {
-            output += String (std::get<2> (i) );
+            output += to_string (std::get<2> (i) );
         }
         else if (std::get<0> (i) == 1)
         {
-            output += String (std::get<1> (i) );
+            output += to_string (std::get<1> (i) );
         }
         else
         {
@@ -4988,13 +5079,13 @@ class PartialLevel_leq_2_Tree
 
 public:
 
-    string String (const unsigned & d = 0) const
+    string to_string (const unsigned & d = 0) const
     {
-        string output = ::String (tree, d);
+        string output = ::to_string (tree, d);
         output += "\n";
         output += EmptyString (d);
         output += "Hanging:";
-        output += ::String (CreateHangingSequence() );
+        output += ::to_string (CreateHangingSequence() );
         return output;
     }
     
@@ -5545,9 +5636,6 @@ public:
             node
         };
         
-//        cout << "output card:" << endl;
-//        cout << "1. " << std::get<0> (output).tree_1.Cardinality() << endl;
-//        cout << "2. " << std::get<0> (output).tree_2.Cardinality() << endl;
         return output;
     }
     
@@ -5595,7 +5683,7 @@ private:
                 cout << endl << EmptyString (d) << "What is the degree of "
                      << name
                      << "("
-                     << ::String (K.EntireEntry (e) )
+                     << ::to_string (K.EntireEntry (e) )
                      << ")"
                      << " ? ";
                      
@@ -5644,7 +5732,7 @@ private:
                 cout << EmptyString (d + indent)
                      << name
                      << "("
-                     <<::String (temp)
+                     <<::to_string (temp)
                      << ")"
                      << " has a unique completion." << endl;
                 Q = Value (s).Completion();
@@ -5659,7 +5747,7 @@ private:
                      << "choose the completion of "
                      << name
                      << "("
-                     << ::String (temp)
+                     << ::to_string (temp)
                      << ")"
                      << ":" << endl;
                 auto P = Value (s).final_tree_with_node.first;
@@ -5682,7 +5770,7 @@ private:
                     auto newnode = P.CreateHangingSequenceFromUCF (pp [i - 1]);
                     
                     cout << EmptyString (d + indent) << pp.size() - i + 1 << ". "
-                         << ::String (newnode);
+                         << ::to_string (newnode);
                 }
                 cout << EmptyString (d + indent) << pp.size() + 1 << ". "
                      << "-1";
@@ -5723,7 +5811,7 @@ private:
             cout << EmptyString (d)
                  << "creating a hanging node for " << name
                  << "("
-                 <<::String (temp)
+                 <<::to_string (temp)
                  << ")"
                  << endl;
                  
@@ -5776,7 +5864,7 @@ private:
                     auto newnode = Q.CreateHangingSequenceFromUCF_1 (qq [i - 1]);
                     
                     cout << EmptyString (d + indent) << qq.size() - i + 1 << ". "
-                         << ::String (newnode);
+                         << ::to_string (newnode);
                 }
                 
                 cout << endl << EmptyString (d) << "Which one? ";
@@ -5832,7 +5920,7 @@ private:
                                        qq_down [i - 1], DIRECTION::DOWN);
                                        
                     cout << EmptyString (d + indent) << qq_down.size() - i + 1 << ". "
-                         << ::String (newnode);
+                         << ::to_string (newnode);
                 }
                 
                 for (unsigned long i = qq_left.size(); i != 0; --i)
@@ -5843,7 +5931,7 @@ private:
                                        
                     cout << EmptyString (d + indent) << qq_left.size() - i + 1 + qq_down.size()
                          << ". "
-                         << ::String (newnode);
+                         << ::to_string (newnode);
                 }
                 
                 cout << endl << EmptyString (d) << "Which one? ";
@@ -5906,17 +5994,17 @@ public:
                 }
                 else
                 {
-                    output += ::String (partial.CreateHangingSequence() );
+                    output += ::to_string (partial.CreateHangingSequence() );
                 }
                 output += " | ";
             }
         }
         
-        output += ::String (Value (s).CreateHangingSequence() );
+        output += ::to_string (Value (s).CreateHangingSequence() );
         return output;
     }
     
-    string String (const unsigned & d = 0) const
+    string to_string (const unsigned & d = 0) const
     {
     
         auto current_tree = Root();
@@ -6089,7 +6177,7 @@ public:
         
         while (true)
         {
-            string nodename = ::String (EntireEntryInDomain (current) );
+            string nodename = ::to_string (EntireEntryInDomain (current) );
             
             LevelOneTree  K ;
             
@@ -6593,7 +6681,7 @@ public:
     
 public:
 
-    string String (const unsigned d = 0) const;
+    string to_string (const unsigned d = 0) const;
     
     const DoubleSequence & GetSequence() const
     {
@@ -6803,7 +6891,7 @@ public:
     bool IsContinuousTypeAtDomain() const
     // is the node at domain continuous type at domain?
     {
-        return (! (IsConstant() )) && sequence.size() + 2 == factor.Cardinality() ;
+        return (! (IsConstant() ) ) && sequence.size() + 2 == factor.Cardinality() ;
     }
     
     bool IsDiscontinuousTypeAtDomain() const
@@ -6894,91 +6982,98 @@ public:
     
     template <typename A>
     void Extend_1 (const LevelThreeTree & Y,
-                 const LevelThreeTreeNode * s,
-                 A && new_in_image){
-                     
-            if (s == nullptr){
-                Extend_1 (std::forward<A> (new_in_image));
-                return;
-            }
-            
-            if (Y.Degree(s) == DEGREE::ZERO){
-                Extend_1(s->LastEntry().first,
-                         std::forward<A> (new_in_image));
-                return;
-            }
-            
-            auto && new_ucf = Y.SequenceMinusValue(s);
-            auto && new_direction = Y.Direction(s);
-            Extend_1 (s->LastEntry().first,
-                      std::forward<A> (new_in_image),
-                      new_ucf,
-                      new_direction);
+                   const LevelThreeTreeNode * s,
+                   A && new_in_image)
+    {
+    
+        if (s == nullptr)
+        {
+            Extend_1 (std::forward<A> (new_in_image) );
             return;
-    }
+        }
         
+        if (Y.Degree (s) == DEGREE::ZERO)
+        {
+            Extend_1 (s->LastEntry().first,
+                      std::forward<A> (new_in_image) );
+            return;
+        }
+        
+        auto && new_ucf = Y.SequenceMinusValue (s);
+        auto && new_direction = Y.Direction (s);
+        Extend_1 (s->LastEntry().first,
+                  std::forward<A> (new_in_image),
+                  new_ucf,
+                  new_direction);
+        return;
+    }
+    
     template <typename A>
     void Extend_2 (const LevelThreeTree & Y,
-                 const LevelThreeTreeNode * s,
-                 const PartialLevelOneTree & Ww,
-                 A && new_in_image){    
+                   const LevelThreeTreeNode * s,
+                   const PartialLevelOneTree & Ww,
+                   A && new_in_image)
+    {
         // now s_parent has deg 2
         
         
         auto && W = Ww.Tree();
         auto && w = Ww.NodeMinusInTree();
         
-        if (w == nullptr){
+        if (w == nullptr)
+        {
             if (s == nullptr)
             {
-                Extend_20(std::forward<A> (new_in_image));
+                Extend_20 (std::forward<A> (new_in_image) );
                 return;
             }
             
-            if (Y.Degree(s) == DEGREE::ZERO){
-                Extend_20(s->LastEntry().first,
-                         std::forward<A> (new_in_image));
+            if (Y.Degree (s) == DEGREE::ZERO)
+            {
+                Extend_20 (s->LastEntry().first,
+                           std::forward<A> (new_in_image) );
                 return;
             }
             
-            auto && new_ucf = Y.SequenceMinusValue(s);
-            auto && new_direction = Y.Direction(s);
+            auto && new_ucf = Y.SequenceMinusValue (s);
+            auto && new_direction = Y.Direction (s);
             Extend_20 (s->LastEntry().first,
-                      std::forward<A> (new_in_image),
-                      new_ucf,
-                      new_direction);
+                       std::forward<A> (new_in_image),
+                       new_ucf,
+                       new_direction);
             return;
         }
         
         // now s_parent has deg 2 and s chooses the deg 1 complesion,
         // or s = -1 and the desc choose the deg 1 completion
         
-        auto && ucf_21 = W.EntireEntry(w);
+        auto && ucf_21 = W.EntireEntry (w);
         
-            if (s == nullptr)
-            {
-                Extend_21(ucf_21,
-                          std::forward<A> (new_in_image));
-                return;
-            }
-            
-            if (Y.Degree(s) == DEGREE::ZERO){
-                Extend_21(s->LastEntry().first,
-                         ucf_21,
-                         std::forward<A> (new_in_image));
-                return;
-            }
-            
-            auto && new_ucf = Y.SequenceMinusValue(s);
-            auto && new_direction = Y.Direction(s);
+        if (s == nullptr)
+        {
+            Extend_21 (ucf_21,
+                       std::forward<A> (new_in_image) );
+            return;
+        }
+        
+        if (Y.Degree (s) == DEGREE::ZERO)
+        {
             Extend_21 (s->LastEntry().first,
-                      ucf_21,
-                      std::forward<A> (new_in_image),
-                      new_ucf,
-                      new_direction);
-            return; 
-                 }
-                 
+                       ucf_21,
+                       std::forward<A> (new_in_image) );
+            return;
+        }
+        
+        auto && new_ucf = Y.SequenceMinusValue (s);
+        auto && new_direction = Y.Direction (s);
+        Extend_21 (s->LastEntry().first,
+                   ucf_21,
+                   std::forward<A> (new_in_image),
+                   new_ucf,
+                   new_direction);
+        return;
+    }
+    
     
     //   *************
     //   add a new node on the leevl_1 component of the factor
@@ -7258,26 +7353,29 @@ public:
     }
     
     void MoveLastEntryInNode (const LevelThreeTree & Y,
-                              const LevelThreeTreeNode * const s){
-                              
-        if (s == nullptr){
+                              const LevelThreeTreeNode * const s)
+    {
+    
+        if (s == nullptr)
+        {
             MoveLastEntryInNode ();
             return;
         }
         
         auto && last_entry_in_node = s->LastEntry().first;
         
-        if (Y.Degree(s) == DEGREE::ZERO){
-            MoveLastEntryInNode(last_entry_in_node);
+        if (Y.Degree (s) == DEGREE::ZERO)
+        {
+            MoveLastEntryInNode (last_entry_in_node);
             return;
         }
         
-        auto && new_ucf = Y.Value(s).NodeMinusSequence();
-        auto && new_direction = Y.Direction(s);
+        auto && new_ucf = Y.Value (s).NodeMinusSequence();
+        auto && new_direction = Y.Direction (s);
         
-        MoveLastEntryInNode(last_entry_in_node,
-                            new_ucf,
-                            new_direction);
+        MoveLastEntryInNode (last_entry_in_node,
+                             new_ucf,
+                             new_direction);
         return;
     }
     
@@ -7338,7 +7436,8 @@ public:
         //current is disc type
         // move the last entry to -1.
         
-        if (sequence.size() == 1){
+        if (sequence.size() == 1)
+        {
             state = STATE::INVALID;
             return;
             // no node (-1) can show up iin 332 desc
@@ -7350,10 +7449,6 @@ public:
         if (Degree (ucf_at_domain_node) == DEGREE::ONE)
         {
             ucf_direction = DIRECTION::DOWN; //by def
-        }
-        else if (NodeInTree_2 (ucf_at_domain_node)->Right() == nullptr)
-        {
-            ucf_direction = DIRECTION::DOWN;
         }
         else
         {
@@ -7452,7 +7547,7 @@ pair<leq_2_Sequence, DIRECTION> UCF (const Level_221_Desc & C,
         return pair<leq_2_Sequence, DIRECTION> (
                    zero_leq_2_Sequence,
                    DIRECTION::NA);
-    auto critical_desc = C.UCF_As21Desc();
+    auto && critical_desc = C.UCF_As21Desc();
     return UCF_Star (critical_desc, W);
     // coulb de leftwards or downlwards
 }
@@ -7541,35 +7636,6 @@ PartialLevel_leq_2_Tree BasePartialTree (
 {
 
     auto && b = BaseUCF (B, Q);
-    
-//   cout << "=x=x=x= BASEUCF: =x=x=x" << endl;
-//   cout << String (B, 5) << endl;
-    if (b.second == DIRECTION::DOWN)
-    {
-        cout << "DOWN" << endl;
-    }
-    if (b.second == DIRECTION::LEFT)
-    {
-        cout << "LEFT" << endl;
-    }
-    if (b.second == DIRECTION::NA)
-    {
-        cout << "NA" << endl;
-    }
-//   cout << "1. " << String (std::get<1> (b.first) ) << endl;
-//   cout << "2. " << String (std::get<2> (b.first) ) << endl;
-    cout << "B:" << endl;
-    cout << String (B, 5) << endl;
-    cout << "Q:" << endl;
-    cout << String (Q, 5) << endl;
-    
-    if (std::get<0> (b.first) == DEGREE::TWO)
-    {
-        cout << "b.first" << endl;
-        cout << String (std::get<2> (b.first) ) << endl;
-    }
-    
-    
     
     if (std::get<0> (b.first) == DEGREE::ZERO)
     {
@@ -7717,9 +7783,9 @@ void MoveToLeft (const Level_21_Desc & D,
             // trim it to disc type at domain
             
             auto && ucf = D.UCF();
-            auto new_in_image = W.EntireEntry (BKLeft (ucf, W) );
-            D_prime.Extend (Q_prime, 
-                            q, 
+            auto && new_in_image = W.EntireEntry (BKLeft (ucf, W) );
+            D_prime.Extend (Q_prime,
+                            q,
                             std::move (new_in_image) );
             return;
         }
@@ -7737,7 +7803,7 @@ void MoveToLeft (const Level_21_Desc & D,
     if (std::get<0> (q) == DEGREE::TWO)
     {
     
-        auto q2 = std::get<2> (q);
+        auto && q2 = std::get<2> (q);
         auto && length_to_compare = q2->Length();
         auto && length = D_prime.GetSequence_2().size();
         
@@ -7792,22 +7858,6 @@ void MoveToLeftCandidate (const Level_221_Desc & C,
                           const DIRECTION & i,
                           const LevelOneTree & W)
 {
-    cout << "Starting MoveToLeft(C,C',T,Q',q,i,W,w)" << endl;
-    cout << String (C, 5) << endl;
-    cout << "T" << endl;
-    cout << String (T, 5) << endl;
-    cout << "Q'" << endl;
-    cout << String (Q_prime, 5) << endl;
-    cout << "W" << endl;
-    cout << String (W, 5) << endl;
-    cout << "w" << endl;
-
-    if (C_prime.state == STATE::INVALID)
-    {
-        cout << "C' is starting" << endl;
-    }
-    
-    
     if (C_prime.state == STATE::INVALID)
     {
         // starting to move
@@ -7833,15 +7883,13 @@ void MoveToLeftCandidate (const Level_221_Desc & C,
                     W);
                     
         if (critical_left.state == STATE::INVALID)
-                {
-                    C_prime.state = STATE::INVALID;
-                    //squeezed out
-                    // no more
-                    return;
-                }    
-                    
-        cout << "critical left found" << endl;
-        cout << String (critical_left, 9) << endl;
+        {
+            C_prime.state = STATE::INVALID;
+            //squeezed out
+            // no more
+            return;
+        }
+        
         //
         // found the 21-desc to move, and move it
         //
@@ -7854,7 +7902,7 @@ void MoveToLeftCandidate (const Level_221_Desc & C,
                         node_in_T2->LastChild(),
                         std::move (critical_left) );
         return;
-                        
+        
     }
     
     // now C'is not nullptr. it is a valid candidate extension
@@ -7897,16 +7945,16 @@ void MoveToLeftCandidate (const Level_221_Desc & C,
                         i,
                         W);
         }
-      
+        
         if (critical_21_desc.state == STATE::INVALID)
-            {
-                //squeezed out
-                // no more
-                C_prime.state = STATE::INVALID;
-                return;
-            }
-            //found the good transition
-
+        {
+            //squeezed out
+            // no more
+            C_prime.state = STATE::INVALID;
+            return;
+        }
+        //found the good transition
+        
         
         // now critical_left is the extention of C'_effective part,
         // need to find the node
@@ -7945,20 +7993,24 @@ void MoveToLeftCandidate (const Level_221_Desc & C,
         //start moving
         
         C_prime.DiscontinuousTrim();
-        C_prime.MoveLastEntryInNode(T2,
-                                    node_in_T2->Left());
-       return;
+        C_prime.MoveLastEntryInNode (T2,
+                                     node_in_T2->Left() );
+        return;
     }
 }
 
 bool ShowUpInSign (const SingleSequence & s,
-                   const Level_21_Desc & D){
+                   const Level_21_Desc & D)
+{
 
-    if (D.Degree() == DEGREE::ONE){
+    if (D.Degree() == DEGREE::ONE)
+    {
         return false;
     }
-    for (auto && e: D.enumeration){
-        if (s == D.factor.Value(e)){
+    for (auto && e : D.enumeration)
+    {
+        if (s == D.factor.Value (e) )
+        {
             return true;
         }
     }
@@ -7968,13 +8020,16 @@ bool ShowUpInSign (const SingleSequence & s,
 
 // D is cont at domain to start with
 bool ShowUpInSignDiscPart (const SingleSequence & s,
-                   const Level_21_Desc & D){
+                           const Level_21_Desc & D)
+{
 
     Level_21_Desc E = D;
     E.DiscontinuousTrim();
     
-    for (auto && e: E.enumeration){
-        if (s == E.factor.Value(e)){
+    for (auto && e : E.enumeration)
+    {
+        if (s == E.factor.Value (e) )
+        {
             return true;
         }
     }
@@ -7982,34 +8037,41 @@ bool ShowUpInSignDiscPart (const SingleSequence & s,
 }
 
 bool ShowUpInBase (const SingleSequence & s,
-                   const Level_221_Desc & C){
+                   const Level_221_Desc & C)
+{
 
-    if (C.Degree() == DEGREE::ONE){
+    if (C.Degree() == DEGREE::ONE)
+    {
         return false;
-    }               
-    for (auto && e: C.enumeration){
-        if (ShowUpInSign(s, C.factor.Value(e))){
+    }
+    for (auto && e : C.enumeration)
+    {
+        if (ShowUpInSign (s, C.factor.Value (e) ) )
+        {
             return true;
         }
     }
-    return false;   
+    return false;
 }
 
 bool ShowUpInBaseDiscPart (const SingleSequence & s,
-                   const Level_221_Desc & C){
+                           const Level_221_Desc & C)
+{
 
     Level_221_Desc E = C;
     E.DiscontinuousTrim();
-    for (auto && e: E.enumeration){
-        if (ShowUpInSign(s, E.factor.Value(e))){
+    for (auto && e : E.enumeration)
+    {
+        if (ShowUpInSign (s, E.factor.Value (e) ) )
+        {
             return true;
         }
     }
-    return false;   
+    return false;
 }
 
 
-//           
+//
 // w is the last node ow W
 // when i3 = DOWN, need to check that w is hit eventually
 //
@@ -8019,19 +8081,20 @@ bool Validate (const Level_221_Desc & C,
                const LevelOneTreeNode * const w,
                const DIRECTION & i3)
 {
-    
-    
-if (i3 == DIRECTION::DOWN)
 
-{
-    // neet do theck that w is hit
-    if (!ShowUpInBase(W.EntireEntry(w), C_prime)){
-        return false;
+
+    if (i3 == DIRECTION::DOWN)
+    
+    {
+        // neet do theck that w is hit
+        if (!ShowUpInBase (W.EntireEntry (w), C_prime) )
+        {
+            return false;
+        }
     }
-}
-
+    
     // need to check it is iindeed a desc!
-
+    
     if (C_prime.IsDiscontinuousTypeAtDomain() )
     {
         return true;
@@ -8039,31 +8102,32 @@ if (i3 == DIRECTION::DOWN)
     
     // now C' is cont at domain
     
-if (i3 == DIRECTION::DOWN)
-{
-    
-    if (ShowUpInBaseDiscPart(W.EntireEntry(w), C_prime)){
-        return true;
-    }
-    auto && last_node_in_C_prime = C_prime.LastNodeInDomain();
-    auto && critical_desc = C_prime.GetFactor().Value (last_node_in_C_prime);
-    
-    if (critical_desc.IsDiscontinuousTypeAtDomain() )
-        return true;
-        
-             
-    auto && last_node = critical_desc.LastNodeInDomain();
-    auto && last_value = critical_desc.factor.Value (last_node);
-    if (last_value != W.EntireEntry (w) )
+    if (i3 == DIRECTION::DOWN)
     {
-        return true;
+    
+        if (ShowUpInBaseDiscPart (W.EntireEntry (w), C_prime) )
+        {
+            return true;
+        }
+        auto && last_node_in_C_prime = C_prime.LastNodeInDomain();
+        auto && critical_desc = C_prime.GetFactor().Value (last_node_in_C_prime);
+        
+        if (critical_desc.IsDiscontinuousTypeAtDomain() )
+            return true;
+            
+            
+        auto && last_node = critical_desc.LastNodeInDomain();
+        auto && last_value = critical_desc.factor.Value (last_node);
+        if (last_value != W.EntireEntry (w) )
+        {
+            return true;
+        }
+        return false;
     }
-    return false;
-}
-
+    
 // now i3 is LEFT
 // W was the same from C
-    
+
     auto && effective_length = C_prime.GetSequence_2().size();
     
     auto && effective_length_to_compare = C.GetSequence_2().size();
@@ -8099,9 +8163,9 @@ if (i3 == DIRECTION::DOWN)
 
 
 // when i3 = DOWN, W is the completion of the node in X to bee extended
-//      
-// when i3 = LEFT, W is the tree component of the node in X 
-// 
+//
+// when i3 = LEFT, W is the tree component of the node in X
+//
 void MoveToLeft (const Level_221_Desc & C,
                  Level_221_Desc & C_prime,
                  const Level_leq_2_Tree & T,
@@ -8164,26 +8228,6 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
                           const Level_leq_2_TreeNode & q,
                           const DIRECTION & i)
 {
-
-    cout << "****Starting MoveToLeftCandidate(B,B',Y,T,Q',q,i)****" << endl;
-//    cout <<"B:"<<endl;
-//    cout<< String(B,4)<<endl;
-    cout << "B':" << endl;
-    if (B_prime.state == STATE::VALID)
-    {
-        cout << String (B_prime, 4) << endl;
-    }
-    else
-    {
-        cout << "nothing" << endl;
-    }
-//
-//    cout << "Y card: "<< Y.Cardinality()<<endl;
-//    cout << "T card: "<< T.Cardinality()<<endl;
-//    cout << "Q' card: "<< Q_prime.Cardinality()<<endl;
-//    cout <<"q: " << Q_prime.String(q)<<endl;
-//    cout <<"i: " << ::String(i)<<endl;
-
     if (B_prime.state == STATE::INVALID)
     {
         // starting
@@ -8216,15 +8260,16 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
             // the next smaller desc
             
             
-            if (critical_left.state == STATE::INVALID){
+            if (critical_left.state == STATE::INVALID)
+            {
                 B_prime.state = STATE::INVALID;
                 return;
             }
             
             B_prime.DiscontinuousTrim();
-            B_prime.Extend_1 (Y, 
-                            node_in_Y->LastChild(),
-                            std::move(critical_left));
+            B_prime.Extend_1 (Y,
+                              node_in_Y->LastChild(),
+                              std::move (critical_left) );
             return;
         }
         
@@ -8244,7 +8289,6 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
                 ||
                 B.IsContinuousTypeAtDomain() )
         {
-            cout << "MoveToLeftCandidate(B,B',Y,T,Q',q,i)****LEFT" << endl;
             // the direction of ucf at Y is going left
             // operate with the final level-1 tree
             
@@ -8262,8 +8306,6 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
         else
         {
         
-            cout << "MoveToLeftCandidate(B,B',Y,T,Q',q,i)****DOWN" << endl;
-            
             // the direction of ucf at Y is going down
             // operate with the final level-1 tree
             MoveToLeft (critical_221_desc,
@@ -8281,9 +8323,10 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
             //
         }
         
-        if (critical_left.state == STATE::INVALID){
-                B_prime.state = STATE::INVALID;
-                return;
+        if (critical_left.state == STATE::INVALID)
+        {
+            B_prime.state = STATE::INVALID;
+            return;
         }
         auto && w_new = BaseUCF (critical_left, W);
         // the baseucf of critical_221_desc
@@ -8313,12 +8356,12 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
         }
         
         B_prime.DiscontinuousTrim();
-        B_prime.Extend_2(Y,
-                       extend_node_in_Y,
-                           Ww_new,
-                       std::move(critical_left));
-        return;      
-
+        B_prime.Extend_2 (Y,
+                          extend_node_in_Y,
+                          Ww_new,
+                          std::move (critical_left) );
+        return;
+        
     }
     
     
@@ -8326,7 +8369,6 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
     // want to move it left
     //
     
-    auto && critical_node = B.ucf_at_domain_node;
     auto && critical_direction = B.ucf_direction;
     auto && factor = B.factor;
     
@@ -8385,7 +8427,6 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
                 //squeezed out
                 // no more
                 B_prime.state = STATE::INVALID;
-                cout << "squeezed out!" << endl;
                 return;
             }
             //found the good transition
@@ -8398,11 +8439,11 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
             auto extend_node_in_Y = node_in_Y->LastChild();
             
             B_prime.DiscontinuousTrim();
-            B_prime.Extend_1(Y,
-                           extend_node_in_Y,
-                           std::move(critical_left));
+            B_prime.Extend_1 (Y,
+                              extend_node_in_Y,
+                              std::move (critical_left) );
             return;
-       }
+        }
         else
         {
             // need to find the biggest extension whth (W,w)
@@ -8419,8 +8460,8 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
                 
                 if (B_prime.ucf_direction == DIRECTION::LEFT)
                 {
-                   
-                    auto  critical_parent = factor.Value_2 (Parent (B_prime.ucf_at_domain_node) );
+                
+                    auto && critical_parent = factor.Value_2 (Parent (B_prime.ucf_at_domain_node) );
                     
                     // move to the left with the same parent as critical 221 desc
                     
@@ -8456,9 +8497,9 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
                 critical_left = critical_221_desc;
                 
                 if (B.ucf_direction == DIRECTION::LEFT
-                         )
+                   )
                 {
-                                    
+                
                     MoveToLeft (bound_in_B,
                                 critical_left,
                                 T,
@@ -8471,7 +8512,7 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
                 }
                 else
                 {
-                                    
+                
                     MoveToLeft (bound_in_B,
                                 critical_left,
                                 T,
@@ -8487,13 +8528,12 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
             }
             
             if (critical_left.state == STATE::INVALID)
-                {
-                    //squeezed out
-                    // no more
-                    B_prime.state = STATE::INVALID;
-                    cout << "no more!" << endl;
-                    return;
-                }          
+            {
+                //squeezed out
+                // no more
+                B_prime.state = STATE::INVALID;
+                return;
+            }
             // now critical_left is the extention of B'_effective part,
             // need to find the node
             
@@ -8505,7 +8545,6 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
             auto && W = B_prime.final_tree_with_node.first;
             
             auto && w_new = BaseUCF (critical_left, W);
-            auto && w = w_new;
             // the base ucf of the critical left
             //  to decide the level-2 tree X , added entry, ucf of partial <=1 tree
             
@@ -8537,13 +8576,13 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
             }
             
             B_prime.DiscontinuousTrim();
-            B_prime.Extend_2(Y,
-                           extend_node_in_Y,
-                           Ww_new,
-                           std::move(critical_left));
+            B_prime.Extend_2 (Y,
+                              extend_node_in_Y,
+                              Ww_new,
+                              std::move (critical_left) );
             return;
             
-       }
+        }
     }
     else
     {
@@ -8571,10 +8610,10 @@ void MoveToLeftCandidate (const Level_322_Desc & B,
                 prev_node_in_Y = prev_node_in_Y->Left();
             }
         }
-
+        
         B_prime.DiscontinuousTrim();
-        B_prime.MoveLastEntryInNode(Y,
-                                    prev_node_in_Y);
+        B_prime.MoveLastEntryInNode (Y,
+                                     prev_node_in_Y);
         return;
     }
 }
@@ -8585,13 +8624,14 @@ bool ShowUpInSignStar (const leq_2_Sequence & q,
 {
     if (std::get<0> (q) == DEGREE::ONE)
     {
-            if ( D.Degree() == DEGREE::ONE &&
-                    D.sequence_1 == std::get<1> (q) )
-                return true;
-            else{
-                return false;
-            }
-
+        if ( D.Degree() == DEGREE::ONE &&
+                D.sequence_1 == std::get<1> (q) )
+            return true;
+        else
+        {
+            return false;
+        }
+        
     }
     else
     {
@@ -8619,24 +8659,13 @@ bool Validate (const Level_322_Desc &     B,
                const Level_leq_2_TreeNode & q,
                const DIRECTION i)
 {
-
-    cout << "+++++starting to validate+++++" << endl;
-    if (std::get<0> (q) == DEGREE::ONE)
-    {
-        cout << "q:" <<::String (Q_prime.tree_1.EntireEntry (std::get<1> (q) ) ) << endl;
-        cout << "q:" <<::String (std::get<1> (Q_prime.EntireEntry (q) ) ) << endl;
-    }
-    cout << String (B_prime, 6) << endl;
-    
     if (B_prime.state == STATE::INVALID)
     {
-        cout << "pos 1: false" << endl;
         return false;
     }
     
     if (B_prime.IsDiscontinuousTypeAtDomain() )
     {
-        cout << "pos 2: true" << endl;
         return true;
     }
     
@@ -8646,7 +8675,6 @@ bool Validate (const Level_322_Desc &     B,
     
     if (effective_length > effective_length_to_compare)
     {
-        cout << "pos 3: true" << endl;
         return true;
     }
     
@@ -8672,7 +8700,6 @@ bool Validate (const Level_322_Desc &     B,
         
         if (critical_desc.IsDiscontinuousTypeAtDomain() )
         {
-            cout << "pos 4: true" << endl;
             return true;
         }
         
@@ -8681,15 +8708,12 @@ bool Validate (const Level_322_Desc &     B,
         auto && last_node = critical_desc.LastNodeInDomain();
         auto && last_value = critical_desc.GetFactor().Value (last_node);
         
-        auto q1 = std::get<1> (Q_prime.EntireEntry (q) );
+        auto && q1 = Q_prime.tree_1.EntireEntry (std::get<1> (q) );
         
         if (last_value != q1 )
         {
-            cout << "pos 5: true" << endl;
             return true;
         }
-        
-        cout << "pos 6: false" << endl;
         
         return false;
     }
@@ -8704,8 +8728,6 @@ bool Validate (const Level_322_Desc &     B,
     
     if ( critical_desc.IsDiscontinuousType (W) )
     {
-        cout << "pos 7: true" << endl;
-        
         return true;
     }
     
@@ -8719,21 +8741,12 @@ bool Validate (const Level_322_Desc &     B,
     
     for (auto && i = critical_desc.enumeration.begin(); i != critical_desc.enumeration.end() - 1; ++i)
     {
-        cout<<"checking pos 8:"<<endl;
-        cout<<"q:"<<String(Q_prime.EntireEntry(q))<<endl;
-        cout<<"critical factor (i): "<<String(critical_factor.Value (*i))<<endl;
-        
-        
         if ( ShowUpInSignStar (Q_prime.EntireEntry (q), critical_factor.Value (*i) ) )
-        
         {
-            cout << "pos 8: true" << endl;
-            
             return true;
         }
     }
     
-    cout << "pos 9: false" << endl;
     return false;
 }
 
@@ -8756,36 +8769,6 @@ void MoveToLeft (const Level_322_Desc & B,
                  const Level_leq_2_TreeNode & q,
                  const DIRECTION & i)
 {
-    cout << "-----" << endl;
-    cout << "starting MoveToLeft(B,B',Y,T,Q',q,i)" << endl;
-    cout << "pareent, B:" << endl;
-    cout << String (B, 2) << endl;
-    if (B_prime.state == STATE::VALID)
-    {
-        cout << "to move, B':" << endl;
-        cout << String (B_prime, 4) << endl;
-    }
-    else
-    {
-        cout << "B' is nothing, to start" << endl;
-    }
-    cout << "Y: " << endl;
-    cout << String (Y) << endl;
-    cout << "T: " << endl;
-    cout << String (T) << endl;
-    
-    cout << "Q': " << endl;
-    cout << String (Q_prime) << endl;
-    cout << "q: " << Q_prime.String (q) << endl;
-    
-    if (std::get<0> (q) == DEGREE::ONE)
-    {
-        cout << "q:" <<::String (Q_prime.tree_1.EntireEntry (std::get<1> (q) ) ) << endl;
-        cout << "q:" <<::String (std::get<1> (Q_prime.EntireEntry (q) ) ) << endl;
-    }
-    
-    cout << "i: " << ::String (i) << endl;
-    
     do
     {
         MoveToLeftCandidate (B, B_prime, Y, T, Q_prime, q, i);
@@ -8811,15 +8794,9 @@ void MoveToLeftCandidate (Level_322_Desc & B,
                           const LevelThreeTree & Y,
                           const Level_leq_2_Tree & T)
 {
-    cout << "======= MoveToLeft (B,Y,T)======" << endl;
-    cout << "Y: " << endl;
-    cout << String (Y) << endl;
-    cout << "T: " << endl;
-    cout << String (T) << endl;
-    
+
     if (B.state == STATE::INVALID)
     {
-        cout << "starting adding" << endl;
         //look for the lasgest node. trivally embed into T
         auto && largest = Y.Root()->LastChild();
         if (largest == nullptr)
@@ -8831,9 +8808,6 @@ void MoveToLeftCandidate (Level_322_Desc & B,
         return;
     }
     
-    cout << "B: " << endl;
-    cout << String (B, 3) << endl;
-    
     // now B is indeed a desc
     
     auto node_in_Y = Y.MyNodeInDomain (B.sequence);
@@ -8841,7 +8815,6 @@ void MoveToLeftCandidate (Level_322_Desc & B,
     const Level_leq_2_Tree Q;
     // a trivail level<+2 tree
     
-//   cout << "Q card " << Q.Cardinality() << endl;
     // first, try to extend B
     //
     if (B.IsDiscontinuousType_Star (T, Q) )
@@ -8854,8 +8827,6 @@ void MoveToLeftCandidate (Level_322_Desc & B,
             auto && critical_21_desc = B.UCF_21_Desc();
             // it has deg 1,
             // essentially a node in T1
-            cout << "crit 21 desc: " << endl;
-            cout << String (critical_21_desc, 4) << endl;
             
             Level_21_Desc critical_left (critical_21_desc);
             
@@ -8864,24 +8835,19 @@ void MoveToLeftCandidate (Level_322_Desc & B,
                           Q.tree_1
                          );
                          
-            cout << "crit left: " << endl;
-            if (critical_left.state == STATE::VALID)
+            if (critical_left.state == STATE::INVALID)
             {
-                cout << String (critical_left, 4) << endl;
-            }
-            
-            if (critical_left.state == STATE::INVALID){
                 B.state = STATE::INVALID;
                 return;
             }
             auto extend_node_in_Y = node_in_Y->LastChild();
             
             B.DiscontinuousTrim();
-            B.Extend_1(Y,
-                     extend_node_in_Y,
-                     std::move(critical_left));
+            B.Extend_1 (Y,
+                        extend_node_in_Y,
+                        std::move (critical_left) );
             return;
-      }
+        }
         
         else
         {
@@ -8892,8 +8858,8 @@ void MoveToLeftCandidate (Level_322_Desc & B,
             Level_221_Desc critical_left (STATE::INVALID);
             
             if (B.ucf_direction == DIRECTION::LEFT
-                ||
-                B.IsContinuousTypeAtDomain())
+                    ||
+                    B.IsContinuousTypeAtDomain() )
             {
                 auto && critical_parent = B.factor.Value_2 (Parent (B.ucf_at_domain_node) );
                 
@@ -8917,7 +8883,8 @@ void MoveToLeftCandidate (Level_322_Desc & B,
                             B.final_tree_with_node.second);
             }
             
-            if (critical_left.state == STATE::INVALID){
+            if (critical_left.state == STATE::INVALID)
+            {
                 B.state = STATE::INVALID;
                 return;
             }
@@ -8925,7 +8892,6 @@ void MoveToLeftCandidate (Level_322_Desc & B,
             auto && W = B.final_tree_with_node.first;
             
             auto && w_new = BaseUCF (critical_left, W);
-            auto && w = w_new;
             // the base ucf of the critical left
             //  to decide the level-2 tree X , added entry, ucf of partial <=1 tree
             
@@ -8954,10 +8920,10 @@ void MoveToLeftCandidate (Level_322_Desc & B,
             }
             
             B.DiscontinuousTrim();
-            B.Extend_2(Y,
-                     extend_node_in_Y,
-                           Ww_new,
-                     std::move(critical_left));
+            B.Extend_2 (Y,
+                        extend_node_in_Y,
+                        Ww_new,
+                        std::move (critical_left) );
             return;
         }
     }
@@ -8985,10 +8951,10 @@ void MoveToLeftCandidate (Level_322_Desc & B,
         }
         
         B.DiscontinuousTrim();
-        B.MoveLastEntryInNode(Y,
-                              prev_node_in_Y);
+        B.MoveLastEntryInNode (Y,
+                               prev_node_in_Y);
         return;
-   }
+    }
 }
 
 //
@@ -9083,15 +9049,6 @@ void MoveToLeft (Level_322_Desc & B,
                  const LevelThreeTree & Y,
                  const Level_leq_2_Tree & T)
 {
-    cout << "-----" << endl;
-    cout << "starting MoveToLeft(B,Y,T)" << endl;
-    
-    
-    cout << "Y: " << endl;
-    cout << String (Y) << endl;
-    cout << "T: " << endl;
-    cout << String (T) << endl;
-    
     do
     {
         MoveToLeftCandidate (B, Y, T);
@@ -9128,12 +9085,12 @@ class Level_332_Factor
 {
 public:
 
-    string String (const Level_332_FactorNode & s) const
+    string to_string (const Level_332_FactorNode & s) const
     {
-        return ::String (domain.EntireEntryInDomain (s.first) );
+        return ::to_string (domain.EntireEntryInDomain (s.first) );
     }
     
-    string String (const unsigned & d = 0) const
+    string to_string (const unsigned & d = 0) const
     {
         string output;
         auto i = domain.Root()->FirstChild();
@@ -9141,11 +9098,11 @@ public:
         while (i != nullptr)
         {
             output += EmptyString (d);
-            output += ::String (domain.EntireEntryInDomain (i) );
+            output += ::to_string (domain.EntireEntryInDomain (i) );
             
             output += " |---> the following 332 desc:\n";
             
-            output += ::String (j->LastEntry().second, d + indent);
+            output += ::to_string (j->LastEntry().second, d + indent);
             output += "\n";
             i = domain.NextEnumerate (i);
             j = factor.NextEnumerate (j);
@@ -9441,22 +9398,6 @@ public:
                          const Level_leq_2_TreeNode & q,
                          const DIRECTION i)
     {
-    
-        cout << "=x=x=x= CreateChildren(s,Y,T,Q',q,i) =x=x=x" << endl;
-        
-        cout << "s: " << ::String (domain.EntireEntryInDomain (s.first) ) << endl;
-        cout << "Y: " << endl;
-        cout <<::String (Y) << endl;
-        cout << "T: " << endl;
-        cout <<::String (T) << endl;
-        cout << "Q': " << endl;
-        cout <<::String (Q_prime) << endl;
-        
-        cout << "q: " << Q_prime.String (q) << endl;
-        cout << "i:" << ::String (i) << endl;
-        
-        
-        
         Level_322_Desc prev_desc (STATE::INVALID);
         
         MoveToLeft (factor.Value (s.second),
@@ -9469,11 +9410,6 @@ public:
                    );
         if (prev_desc.state == STATE::INVALID)
         {
-            cout << "=x=x=x= Finished: CreateChildren(s,Y,T,Q',q,i) =x=x=x" << endl;
-            cout << "position: " << endl;
-            cout <<::String (domain.EntireEntryInDomain (s.first) ) << endl;
-            
-            cout << "No children!" << endl;
             return;
         }
         
@@ -9481,12 +9417,7 @@ public:
                            DIRECTION::DOWN,
                            BasePartialTree (prev_desc, Q_prime),
                            prev_desc);
-        cout << "added a child! base ucf:" << endl;
-        cout <<::String (BasePartialTree (prev_desc, Q_prime) ) << endl;
-        cout << "position: " << endl;
-        cout <<::String (domain.EntireEntryInDomain (output.first) ) << endl;
-        
-        
+                           
         while (true)
         {
             MoveToLeft (factor.Value (s.second),
@@ -9499,12 +9430,6 @@ public:
                        );
             if (prev_desc.state == STATE::INVALID)
             {
-                cout << "=x=x=x= Finished: CreateChildren(s,Y,T,Q',q,i) =x=x=x" << endl;
-                cout << "position: " << endl;
-                cout <<::String (domain.EntireEntryInDomain (s.first) ) << endl;
-                
-                
-                cout << "Has children!" << endl;
                 return;
             }
             
@@ -9512,10 +9437,6 @@ public:
                           DIRECTION::LEFT,
                           BasePartialTree (prev_desc, Q_prime),
                           prev_desc);
-            cout << "added a child! base ucf:" << endl;
-            cout <<::String (BasePartialTree (prev_desc, Q_prime) ) << endl;
-            cout << "position: " << endl;
-            cout <<::String (domain.EntireEntryInDomain (output.first) ) << endl;
         }
     }
     
@@ -9534,32 +9455,16 @@ public:
                                          const LevelThreeTree & Y,
                                          const Level_leq_2_Tree & T)
     {
-        int gang;
-        cout << "=x=x=x= CreateChildren(s,Y,T) =x=x=x" << endl;
-        
-        cout << "s: " << ::String (domain.EntireEntryInDomain (s.first) ) << endl;
-        
-        cout << "Y: " << endl;
-        cout <<::String (Y) << endl;
-        cout << "T: " << endl;
-        cout <<::String (T) << endl;
-        
         if (s.first->IsEmpty() )
         {
-            cout << "creating children of root" << endl;
             // create children of root
             Level_322_Desc prev_desc (STATE::INVALID);
             MoveToLeft (prev_desc, Y, T);
             
             if (prev_desc.state == STATE::INVALID)
             {
-                cout << "=x=x=x= Finished CreateChildren(s,Y,T) =x=x=x" << endl;
-                cout << "=x=x=x= No children! =x=x=x" << endl;
                 return zeroLevel_332_FactorNode;
             }
-            
-            cout << "first child below root:" << endl;
-            cout << ::String (prev_desc, 2) << endl;
             
             Level_leq_2_Tree Q;
             
@@ -9572,23 +9477,14 @@ public:
             
             if (d == DEGREE::ZERO)
             {
-                cout << "added a child 0! base ucf:" << endl;
-                cout <<::String (BasePartialTree (prev_desc, Q) ) << endl;
                 current = Add_0 (s, prev_desc);
             }
             else if (d == DEGREE::ONE)
             {
-                cout << "added a child 1! base ucf:" << endl;
-                cout <<::String (BasePartialTree (prev_desc, Q) ) << endl;;
-                
                 current = Add_1 (s, prev_desc);
             }
             else
             {
-                cout << "added a child2! base ucf:" << endl;
-                cout <<::String (BasePartialTree (prev_desc, Q) ) << endl;;
-                
-                
                 current = Add_2 (s, prev_desc);
             }
             
@@ -9606,9 +9502,6 @@ public:
                     // finished
                     return output;
                 }
-                cout << "another desc below root:" << endl;
-                cout << ::String (prev_desc, 2) << endl;;
-                
                 auto && new_ucf = BaseUCF (prev_desc, Q);
                 
                 auto d = std::get<0> (new_ucf.first);
@@ -9616,28 +9509,18 @@ public:
                 
                 if (d == DEGREE::ZERO)
                 {
-                    cout << "added a child 00! base ucf:" << endl;
-                    cout <<::String (BasePartialTree (prev_desc, Q) ) << endl;
                     current = Add_0 (current, prev_desc);
                 }
                 else if (d == DEGREE::ONE)
                 {
-                    cout << "added a child 01! base ucf:" << endl;
-                    cout <<::String (BasePartialTree (prev_desc, Q) ) << endl;
-                    
                     current = Add_1 (current, prev_desc);
                 }
                 else
                 {
-                    cout << "added a child02! base ucf:" << endl;
-                    cout <<::String (BasePartialTree (prev_desc, Q) ) << endl;
-                    
                     current = Add_2 (current, prev_desc);
                 }
             }
         }
-        
-        cout << "creating children of nonempty node" << ::String (Y.EntireEntryInDomain (s.first) ) << endl;
         
         // now the node is nonempty
         
@@ -9646,7 +9529,6 @@ public:
         
         if (Degree (s) == DEGREE::ZERO)
         {
-            cout << "no children because degree 0" << endl;
             return zeroLevel_332_FactorNode;
             // not extendable!
         }
@@ -9655,9 +9537,9 @@ public:
         if (Degree (s) == DEGREE::ONE)
         {
             auto && Q_prime_C = domain.Value (s.first).CompletionWithNode();
-            auto Q_prime = std::get<0> (Q_prime_C);
-            auto q = std::get<1> (Q_prime_C);
-            auto i = std::get<2> (Q_prime_C);
+            auto && Q_prime = std::get<0> (Q_prime_C);
+            auto && q = std::get<1> (Q_prime_C);
+            auto && i = std::get<2> (Q_prime_C);
             CreateChildren (s,
                             Y,
                             T,
@@ -9666,20 +9548,9 @@ public:
                             i);
             if (s.first->LastChild() != nullptr)
             {
-            
-                cout << "=x=x=x= Finished CreateChildren(s,Y,T) =x=x=x" << endl;
-                cout << "the position was: " << endl;
-                cout <<::String (domain.EntireEntryInDomain (s.first) ) << endl;
-                cout << "=x=x=x= Has children, move to last child! =x=x=x" << endl;
-                
                 return Level_332_FactorNode (s.first->LastChild(),
                                              s.second->LastChild() );
             }
-            
-            cout << "=x=x=x= Finished CreateChildren(s,Y,T) =x=x=x" << endl;
-            cout << "the position was: " << endl;
-            cout <<::String (domain.EntireEntryInDomain (s.first) ) << endl;
-            cout << "=x=x=x= No children! =x=x=x" << endl;
             
             return zeroLevel_332_FactorNode;
         }
@@ -9691,9 +9562,9 @@ public:
         
         
         auto && Q_prime_C0 = domain.Value (s.first).CompletionWithNode();
-        auto Q_prime0 = std::get<0> (Q_prime_C0);
-        auto q0 = std::get<1> (Q_prime_C0);
-        auto i0 = std::get<2> (Q_prime_C0);
+        auto && Q_prime0 = std::get<0> (Q_prime_C0);
+        auto && q0 = std::get<1> (Q_prime_C0);
+        auto && i0 = std::get<2> (Q_prime_C0);
         
         CreateChildren (s,
                         Y,
@@ -9711,9 +9582,9 @@ public:
             auto && Q_prime_C = domain.Value (s.first).CompletionWithNode (P.EntireEntry (j) );
             
             
-            auto Q_prime = std::get<0> (Q_prime_C);
-            auto q = std::get<1> (Q_prime_C);
-            auto i = std::get<2> (Q_prime_C);
+            auto && Q_prime = std::get<0> (Q_prime_C);
+            auto && q = std::get<1> (Q_prime_C);
+            auto && i = std::get<2> (Q_prime_C);
             
             CreateChildren (s,
                             Y,
@@ -9726,21 +9597,9 @@ public:
         
         if (s.first->LastChild() != nullptr)
         {
-            cout << "=x=x=x= Finished CreateChildren(s,Y,T) =x=x=x" << endl;
-            cout << "the position was: " << endl;
-            cout <<::String (domain.EntireEntryInDomain (s.first) ) << endl;
-            
-            cout << "=x=x=x= Has children! =x=x=x" << endl;
-            
             return Level_332_FactorNode (s.first->LastChild(),
                                          s.second->LastChild() );
         }
-        cout << "=x=x=x= Finished CreateChildren(s,Y,T) =x=x=x" << endl;
-        cout << "the position was: " << endl;
-        cout <<::String (domain.EntireEntryInDomain (s.first) ) << endl;
-        
-        cout << "=x=x=x= No children! =x=x=x" << endl;
-        
         return zeroLevel_332_FactorNode;
     }
 };
@@ -9748,12 +9607,6 @@ public:
 
 Level_332_Factor TensorProduct (const LevelThreeTree Y, const Level_leq_2_Tree & T)
 {
-    cout << "_=_=_=_=_=_=  TensorProduct(Y,T) =_==_=_=_" << endl;
-    cout << "Y: " << endl;
-    cout <<::String (Y) << endl;
-    cout << "T: " << endl;
-    cout <<::String (T) << endl;
-    
     Level_332_Factor rho;
     
     auto current  = rho.Root();
@@ -9787,6 +9640,9 @@ Level_332_Factor TensorProduct (const LevelThreeTree Y, const Level_leq_2_Tree &
         }
         if (current.first == nullptr)
         {
+            // finished!!
+            Flatten (rho.domain);
+            Flatten (rho.factor);
             return rho;
         }
         current = Left (current);
@@ -9796,26 +9652,26 @@ Level_332_Factor TensorProduct (const LevelThreeTree Y, const Level_leq_2_Tree &
 }
 
 
-string String (const Level_21_Desc & D,
+string to_string (const Level_21_Desc & D,
                const unsigned & d )
 {
-    return D.String (d);
+    return D.to_string (d);
 }
 
-string String (const Level_221_Desc & D,
+string to_string (const Level_221_Desc & D,
                const unsigned & d)
 {
     return D.String221 (d);
 }
 
 
-string String (const Level_322_Desc & B,
+string to_string (const Level_322_Desc & B,
                const unsigned & d )
 {
-    return B.String (d);
+    return B.to_string (d);
 }
 
-string String (const leq_2_Sequence & s)
+string to_string (const leq_2_Sequence & s)
 {
     if (std::get<0> (s) == DEGREE::ZERO)
     {
@@ -9824,21 +9680,21 @@ string String (const leq_2_Sequence & s)
     if (std::get<0> (s) == DEGREE::ONE)
     {
         return "[1, " +
-               String (std::get<1> (s) ) +
+               to_string (std::get<1> (s) ) +
                "]";
     }
     
     return "[2, " +
-           String (std::get<2> (s) ) +
+           to_string (std::get<2> (s) ) +
            "]";
            
 }
 
-string Level_322_Desc::String (const unsigned d) const
+string Level_322_Desc::to_string (const unsigned d) const
 {
     string s;
     
-    s += EmptyString (d) + "node: " + ::String (sequence);
+    s += EmptyString (d) + "node: " + ::to_string (sequence);
     
     if (IsContinuousTypeAtDomain() )
     {
@@ -9854,56 +9710,57 @@ string Level_322_Desc::String (const unsigned d) const
     {
         auto && current_seq = factor.EntireEntryInDomain (i);
         s += EmptyString (d);
-        s += ::String (current_seq);
+        s += ::to_string (current_seq);
         s += " |--> ";
         if (std::get<0> (current_seq) == DEGREE::ONE)
         {
             s += "the following level 21-desc\n";
-            s += ::String (factor.Value_1 (i), d + indent );
+            s += ::to_string (factor.Value_1 (i), d + indent );
         }
         else
         {
             s += "the following level 221-desc\n";
-            s += ::String (factor.Value_2 (i), d + indent );
+            s += ::to_string (factor.Value_2 (i), d + indent );
         }
     }
     return s;
 }
 
-string String (const LevelTwoTree & Q,
+string to_string (const LevelTwoTree & Q,
                const unsigned & d)
 {
-    return Q.String (d);
+    return Q.to_string (d);
 }
-string String (const PartialLevel_leq_2_Tree & Q,
+string to_string (const PartialLevel_leq_2_Tree & Q,
                const unsigned & d)
 {
-    return Q.String (d);
+    return Q.to_string (d);
 }
-string String (const LevelThreeTree & Q,
+string to_string (const LevelThreeTree & Q,
                const unsigned & d)
 {
-    return Q.String (d);
+    return Q.to_string (d);
 }
-string String (const LevelOneTree & Q,
+string to_string (const LevelOneTree & Q,
                const unsigned & d)
 {
-    return Q.String (d);
+    return Q.to_string (d);
 }
-string String (const Level_leq_2_Tree & Q,
+string to_string (const Level_leq_2_Tree & Q,
                const unsigned & d)
 {
-    return Q.String (d);
+    return Q.to_string (d);
 }
-string String (const Level_332_Factor & Q,
+string to_string (const Level_332_Factor & Q,
                const unsigned & d)
 {
-    return Q.String (d);
+    return Q.to_string (d);
 }
-string String (const Level_222_Factor & Q,
-               const unsigned & d){
-               return Q.String(d);
-               }
+string to_string (const Level_222_Factor & Q,
+               const unsigned & d)
+{
+    return Q.to_string (d);
+}
 
 
 #endif // SHARP_H_INCLUDED
