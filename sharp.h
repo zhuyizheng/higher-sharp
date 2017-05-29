@@ -9762,6 +9762,31 @@ string to_string (const Level_222_Factor & Q,
     return Q.to_string (d);
 }
 
+vector<pair<int,int>> Count (const LevelTwoTree & Q){
+    vector<pair<int,int>> output;
+    for (auto && i = Q.Root();
+                i != nullptr;
+                i = i->BKLeft()){
+        if (output.size() <= i->Length()){
+            if (Q.Degree(i) == DEGREE::ZERO){
+                output.emplace_back(1,0);
+            }
+            else{
+                                output.emplace_back(1,1);
+            }
+        }
+        else{
+             if (Q.Degree(i) == DEGREE::ZERO){
+                ++ output[i->Length()].first;
+            }
+            else{
+                ++ output[i->Length()].first;
+                ++ output[i->Length()].second;
+            }
+        }
+    }
+    return output;
+}
 
 #endif // SHARP_H_INCLUDED
 

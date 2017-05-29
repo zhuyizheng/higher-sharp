@@ -30,8 +30,8 @@ int main()
         cout << "What do you want to compute? 0 to quit" << endl;
         cout << "1. Tensor product of (<=2, <=2) trees." << endl;
         cout << "2. Tensor product of (3, <=2) trees." << endl;
-        cout << "3. Tensor product of (<=2, <=2, <=2) trees."<<endl;
-        cout << "4. Tensor product of (3, <=2, <=2) trees."<<endl;
+        cout << "3. Tensor product of (<=2, <=2, <=2) trees." << endl;
+        cout << "4. Tensor product of (3, <=2, <=2) trees." << endl;
         cin >> choice;
         if (choice == 0)
         {
@@ -49,27 +49,39 @@ int main()
             T.Input ("Q");
             auto && U = TensorProduct (X, T);
             
-            cout<< endl<<"The tensor product of T and Q is U."<<endl;
+            cout << endl << "The tensor product of T and Q is U." << endl;
             
-            cout << "Level-1 component of U cardinality: " 
-                << U.factor_1.Cardinality() - 1 
-                << endl;
-            cout << "Level-2 component of U cardinality: " 
-                << U.factor_2.Cardinality() 
-                << endl;
+            cout << "Level-1 component of U cardinality: "
+                 << U.factor_1.Cardinality() - 1
+                 << endl;
+            cout << "Level-2 component of U cardinality: "
+                 << U.factor_2.Cardinality()
+                 << endl;
+                 
+            auto && c = Count (U.domain.tree_2);
+            cout << "Level_2 component of U depth:"
+                 << c.size() << endl;
+            cout << "Node count each level | Node count with deg 1 each level" << endl;
+            for (auto && i : c)
+            {
+                cout << i.first << "\t|\t" << i.second << endl;
+            }
             
-            cout<< endl<< "Generate LaTeX code? (Y/N) ";
+            cout << endl << "Generate LaTeX code? (Y/N) ";
             
             char x;
-            cin>>x;
-            if (x == 'y' || x == 'Y'){
-            
-            cout << Latex (U,
-                           "U",
-                           "\\alpha",
-                           "g",
-                           "\\item");
-            cout<<endl<<"Finish!"<<endl<<endl;}
+            cin >> x;
+            if (x == 'y' || x == 'Y')
+            {
+                cout << latexpre;
+                
+                cout << Latex (U,
+                               "U",
+                               "\\alpha",
+                               "g",
+                               "\\item");
+                cout << endl << "Finish!" << endl << endl;
+            }
         }
         
 //
@@ -83,63 +95,73 @@ int main()
             T.Input ("T");
             auto && U = TensorProduct (Y, T);
             
-            cout<< endl<<"The tensor product of Y and T is U."<<endl;
-            cout << "U cardinality: " 
-                << U.Cardinality() - 1
-                << endl;
-                
-            
-            cout<< endl<< "Generate LaTeX code? (Y/N)"<<endl;
+            cout << endl << "The tensor product of Y and T is U." << endl;
+            cout << "U cardinality: "
+                 << U.Cardinality() - 1
+                 << endl;
+                 
+                 
+            cout << endl << "Generate LaTeX code? (Y/N)" << endl;
             
             char x;
-            cin>>x;
-            if (x == 'y' || x == 'Y'){
-                  
-            cout << Latex (U,
-                           "U",
-                           "\\alpha",
-                           "g",
-                           "h",
-                           "\\item");
-                           
-                                       cout<<endl<<"Finish!"<<endl<<endl;}
-
+            cin >> x;
+            if (x == 'y' || x == 'Y')
+            {
+                cout << latexpre;
+                
+                cout << Latex (U,
+                               "U",
+                               "\\alpha",
+                               "g",
+                               "h",
+                               "\\item");
+                               
+                cout << endl << "Finish!" << endl << endl;
+            }
+            
         }
         
-        else if (choice == 3){
+        else if (choice == 3)
+        {
             Level_leq_2_Tree X;
-            X.Input("X");
+            X.Input ("X");
             Level_leq_2_Tree T;
-            T.Input("T");
+            T.Input ("T");
             Level_leq_2_Tree Q;
-            Q.Input("Q");
-            cout<<TensorProduct(TensorProduct(X,T).domain,Q).Cardinality() <<endl; 
-            cout<< endl<< "Generate LaTeX code? (Y/N) ";
+            Q.Input ("Q");
+            cout << TensorProduct (TensorProduct (X, T).domain, Q).Cardinality() << endl;
+            cout << endl << "Generate LaTeX code? (Y/N) ";
             
             char x;
-            cin>>x;
-            if (x == 'y' || x == 'Y'){
-                cout<<LatexTensorProduct(X,T,Q)<<endl;
+            cin >> x;
+            if (x == 'y' || x == 'Y')
+            {
+                cout << latexpre;
+                cout << LatexTensorProduct (X, T, Q) << endl;
                 
             }
-        }        
+        }
         
-        else if (choice == 4){
+        else if (choice == 4)
+        {
             LevelThreeTree X;
-            X.Input("X");
+            X.Input ("Y");
             Level_leq_2_Tree T;
-            T.Input("T");
+            T.Input ("T");
             Level_leq_2_Tree Q;
-            Q.Input("Q");
-            cout<<TensorProduct(TensorProduct(X,T).domain,Q).Cardinality() <<endl; 
-            cout<< endl<< "Generate LaTeX code? (Y/N) ";
+            Q.Input ("Q");
+            cout << TensorProduct (TensorProduct (X, T).domain, Q).Cardinality() << endl;
+            cout << endl << "Generate LaTeX code? (Y/N) ";
             
             char x;
-            cin>>x;
-//            if (x == 'y' || x == 'Y'){
-//                cout<<LatexTensorProduct(X,T,Q)<<endl;
-//                
-//            }
+            cin >> x;
+            if (x == 'y' || x == 'Y')
+            {
+                cout << latexpre;
+                
+                cout << LatexTensorProduct (X, T, Q) << endl;
+                
+            }
         }
     }
     
@@ -157,7 +179,7 @@ int main()
 //   cout<<sigma7<<endl<<sigma8<<endl;
 
 
-    
+
 // myfile<<endl<<"This tree has cardinality "<<sigma2<<".";
 
 

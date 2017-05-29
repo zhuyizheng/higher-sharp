@@ -1,6 +1,8 @@
 #ifndef LATEX_H_INCLUDED
 #define LATEX_H_INCLUDED
 
+constexpr  string latexpre = "\\newcommand\\newcommand{\\comp}[2]{{}^{#1}\\!#2}\n\\newcommand{\\tree}{\\operatorname{tree}}\n\\newcommand{\\node}{\\operatorname{node}}\n";
+
 string Latex (const DEGREE & d)
 {
     if (d == DEGREE::ZERO)
@@ -994,6 +996,140 @@ output += "$\\langle\\langle";
     }
     return output;
 }
+string LatexRepDual (const Level_332_Factor & rho,
+                     const Level_332_Factor & rho_prime,
+              const string & lv_3_tree_name,
+              const string & factor_name,
+              const string & factor_prime_name,
+              const string & enumword)
+{
+
+    string output;
+    auto i = rho.domain.Root()->BKLeft();
+    auto j = rho.factor.Root()->BKLeft();
+    auto i_prime = rho_prime.domain.Root()->BKLeft();
+    auto j_prime = rho_prime.factor.Root()->BKLeft();
+    while (i != nullptr)
+    {
+
+        output += enumword ;
+        output += " ";
+
+
+
+        if (i->Length() == 1){
+            output += "$";
+            output += lv_3_tree_name;
+            output += "(";
+            output += Latex (rho.domain.EntireEntryInDomain (i) );
+            output += ")";
+            output += "$ ";
+            output += " has degree ";
+            output += Latex(rho.domain.Degree(i));
+        }
+        else{
+
+            output += "$";
+            output += lv_3_tree_name;
+            output += "_{\\tree}(";
+            output += Latex (rho.domain.EntireEntryInDomain (i) );
+            output += ")";
+            output += "=$ ";
+
+            output += "";
+
+            if (rho.domain.Degree(i->Parent()) == DEGREE::ONE){
+                output += "the unique completion of $";
+                output += lv_3_tree_name;
+                output += "(";
+                output += Latex(rho.domain.EntireEntryInDomain(i->Parent()));
+                output += ")$";
+            }
+            else{
+                output += "the completion of $";
+                output += lv_3_tree_name;
+                output += "(";
+                output += Latex(rho.domain.EntireEntryInDomain(i->Parent()));
+                output += ")$";
+                output += " that sends $";
+
+                auto && critical_leq_2_tree_parent = rho.domain.Value(i->Parent());
+
+                auto hanging_sequence = critical_leq_2_tree_parent.CreateHangingSequence();
+
+                auto hanging_minus = hanging_sequence;
+                if (std::get<0>(hanging_minus) == DEGREE::ONE){
+                        std::get<1>(hanging_minus).pop_back();}
+                else{
+                        std::get<2>(hanging_minus).pop_back();}
+
+                output += Latex(hanging_sequence);
+                output += "$ to the completion of $";
+                output += lv_3_tree_name;
+                output += "_{\\tree}(";
+                output += Latex(rho.domain.EntireEntryInDomain(i->Parent()));
+                output += ")";
+                output += "";
+                output += Latex(hanging_minus);
+                output += "$ ";
+                output += " whose node component is $";
+
+
+
+                auto && Ww = rho.domain.Partial(i);
+                auto && w = Ww.NodeMinusInTree();
+                if (w == nullptr){
+                    output += "-1$";
+                }
+                else{
+                    output += Latex(Ww.CreateHangingSequence());
+                    output += "$";
+                }
+            }
+
+            output += "\n\n\\noindent";
+
+            output += "$";
+            output += lv_3_tree_name;
+            output += "_{\\node}";
+            output += Latex (rho.domain.EntireEntryInDomain (i) );
+            output += "";
+            output += "= ";
+
+            output += Latex(rho.domain.Value(i).CreateHangingSequence());
+
+            output += "$";
+        }
+
+
+        output += "\n\n";
+
+output += "$\\langle\\langle";
+             output += factor_name;
+            output += Latex (rho.domain.EntireEntryInDomain (i) );            
+             output += "\\rangle\\rangle";
+            output += "=$";
+            
+        output += LatexRep (j->LastEntry().second);
+        output += "\n\n";
+        i = i->BKLeft();
+        j = j->BKLeft();        
+        
+        output += "\n\n";
+
+output += "$\\langle\\langle";
+             output += factor_prime_name;
+            output += Latex (rho_prime.domain.EntireEntryInDomain (i_prime) );            
+             output += "\\rangle\\rangle";
+            output += "=$";
+            
+        output += LatexRep (j_prime->LastEntry().second);
+        output += "\n\n";
+        i_prime = i_prime->BKLeft();
+        j_prime = j_prime->BKLeft();
+    }
+    return output;
+}
 
 string LatexTensorProduct (const Level_leq_2_Tree & T,
                            const Level_leq_2_Tree & Q,
@@ -1024,6 +1160,44 @@ string LatexTensorProduct (const Level_leq_2_Tree & T,
     output += "\\begin{etaremune}\n";
     output += LatexRepDual(TensorProduct(TQ.domain, U),
                            TensorProduct(T, QU.domain),
+                           "N",
+                           "\\psi",
+                           "\\psi'",
+                           "\\item"
+                           );
+    output += "\n\\end{etaremune}";
+    return output;
+}
+
+string LatexTensorProduct (const LevelThreeTree & Y,
+                           const Level_leq_2_Tree & T,
+                           const Level_leq_2_Tree & Q){
+    string output;
+    output += "A representation of $Y \\otimes T$ is $R$, and $\\rho_R$ is a \"level-3 tree isomorphism\" between $R$ and  $Y \\otimes T$, given as follows:\n"                          ;
+    output += "\\begin{itemize}";
+    auto && YT = TensorProduct(Y,T);
+    output += LatexRep (YT,
+                        "R",
+                        "\\rho_R",
+                        "\\item");
+    output += "\\end{itemize}";    
+    
+    output += "A representation of $T \\otimes Q$ is $M$, and $\\pi_M$ is a \"level $\\leq 2$ tree isomorphism\" between $M$ and  $T \\otimes Q$, given as follows:\n"                          ;
+    output += "\\begin{itemize}";
+    auto && TQ = TensorProduct(T,Q);
+    output += LatexRep (TQ,
+                        "M",
+                        "\\pi_M",
+                        "\\item");
+    output += "\\end{itemize}";
+    
+    output += "Both $(Y \\otimes T) \\otimes Q$ and $Y \\otimes (T \\otimes Q)$ can be represented by the tree $N$. ";
+    output += "Let $\\psi$ be the \"level-3 tree isomorphism\" between $N$ and  $R \\otimes Q$ and ";
+    output += "let $\\psi'$ be the \"level-3 tree isomorphism\" between $N$ and  $Y \\otimes M$.";
+    output += "Then $N$ and $\\psi$, $\\psi'$ are as follows:\n";
+    output += "\\begin{etaremune}\n";
+    output += LatexRepDual(TensorProduct(YT.domain, Q),
+                           TensorProduct(Y, TQ.domain),
                            "N",
                            "\\psi",
                            "\\psi'",
