@@ -1,0 +1,44 @@
+The tiny difference between the paper and the program:
+
+1. Partial level <=1 tree. 
+	If (P,-1) is a partial level-1 tree, it is realized by 
+		(P,nullptr) 
+in the program.
+	If (P,p) is a partial level-1 tree, it is realized by 
+		(P,p-)
+where p- is the node in the tree P. The pointer to p- must be exactly the pointer in P that represents p-.
+
+2. Partial level <=2 tree. 
+	If (Q,(0,-1,emptyset)) is a partial level <=2 tree, it is realized by 
+		(	
+			Q,
+			empty_leq_2_node,
+			(trivial_lv1_tree,nullptr),
+			DIRECTION::NA
+		) 
+in the program.
+	If (Q,(1,q,emptyset)) is a partial level <=2 tree, it is realized by 
+		(	
+			Q,
+			(1,q-),
+			(trivial_lv1_tree,nullptr),
+			DIRECTION::DOWN
+		) 
+in the program. The DIRECTION::DOWN means that the hanging node is going downwards from (1,q-). 
+	If (Q,(2,q,P)) is a partial level <=2 tree, if q has an elder sister whose tree component is the same as q, it is realized by 		
+		(	
+			Q,
+			(2,the_next_elder_sister_of_q_with_same_tree_component),
+			(P,p),
+			DIRECTION::LEFT
+		) 
+The DIRECTION::LEFT means that the hanging node is going leftwards from (2,the_next_elder_sister_of_q_with_same_tree_component). p is the last node in P according to the enumeration of Q, i.e. the hanging node of Q(2,q-). 
+	If (Q,(2,q,P)) is a partia level <=2 tree, but q doesn't have an elder sister whose tree component is the same as q, it is realized by 
+		(	
+			Q,
+			(2,q-),
+			(P,p),
+			DIRECTION::DOWN
+		) 
+The DIRECTION::DOWN means that the hanging node is going downwards from (2,q-). p is the last node in P according to the enumeration of Q, i.e. the hanging node of Q(2,q-). 
+
