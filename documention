@@ -25,15 +25,15 @@ in the program.
 			DIRECTION::DOWN
 		) 
 in the program. The DIRECTION::DOWN means that the hanging node is going downwards from (1,q-). 
-	If (Q,(2,q,P)) is a partial level <=2 tree, if q has an elder sister whose node component is the same as q, it is realized by 		
+	If (Q,(2,q,P)) is a partial level <=2 tree, if q has an elder sister, it is realized by 		
 		(	
 			Q,
-			(2,the_next_elder_sister_of_q_with_same_node_component),
+			(2,the_next_elder_sister_of_q),
 			(P,p),
 			DIRECTION::LEFT
 		) 
-The DIRECTION::LEFT means that the hanging node is going leftwards from (2,the_next_elder_sister_of_q_with_same_node_component). p is the last node in P according to the enumeration of Q, i.e. the hanging node of Q(2,q-). 
-	If (Q,(2,q,P)) is a partia level <=2 tree, but q doesn't have an elder sister whose node component is the same as q, it is realized by 
+The DIRECTION::LEFT means that the hanging node is going leftwards from (2,the_next_elder_sister_of_q). p is the last node in P according to the enumeration of Q, i.e. the hanging node of Q(2,q-). 
+	If (Q,(2,q,P)) is a partia level <=2 tree, but q doesn't have an elder sister, it is realized by 
 		(	
 			Q,
 			(2,q-),
