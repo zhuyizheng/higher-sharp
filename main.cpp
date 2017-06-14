@@ -20,9 +20,6 @@ typedef std::chrono::high_resolution_clock Clock;
 
 int main()
 {
-
-    ofstream myfile;
-    myfile.open ("example.txt");
     
     while (true)
     {
@@ -32,6 +29,7 @@ int main()
         cout << "2. Tensor product of (3, <=2) trees." << endl;
         cout << "3. Tensor product of (<=2, <=2, <=2) trees." << endl;
         cout << "4. Tensor product of (3, <=2, <=2) trees." << endl;
+        cout << "5. (not implemented) Draw the tensor product of (<=2, <=2, <=2) in a file, large tree allowed"<<endl;
         cin >> choice;
         if (choice == 0)
         {
@@ -163,11 +161,53 @@ int main()
                 
             }
         }
-    }
+        
+        else if (choice == 5){
+            Level_leq_2_Tree X;
+            X.Input ("X");
+            Level_leq_2_Tree T;
+            T.Input ("T");
+            Level_leq_2_Tree Q;
+            Q.Input ("Q");
+    ofstream myfile;
+    myfile.open ("level_222.txt");
+    myfile<<"X:"<<endl;
+    myfile<<to_string(X)<<endl;
+    myfile<<"T:"<<endl;
+    myfile<<to_string(T)<<endl;
+    myfile<<"Q:"<<endl;
+    myfile<<to_string(Q)<<endl;
     
     
     cout << "starting computing tensor product" << endl;
     auto t1 = Clock::now();
+    
+     myfile<<"$X \\otimes T \\otimes Q$ has cardinality ";
+     long pos = myfile.tellp();
+     myfile<<"              "<<endl<<endl;
+     myfile<<"The structure in reverse:"<<endl<<endl;
+     
+      auto sigma2 = DynamicTensorProduct(X,TensorProduct(T,Q).domain, myfile);
+myfile.seekp(pos);
+myfile<<sigma2<<".";
+
+
+    auto t2 = Clock::now();
+    long double mytime = std::chrono::duration_cast<std::chrono::nanoseconds> (t2 - t1).count() / double (1000000000);
+    
+cout<<endl<<"finished writing into level_222.txt!"<<endl<<endl
+<<"The product has size "<<sigma2<<"."<<endl<<endl;
+
+    std::cout << "It took "
+              << mytime
+              << " seconds" << std::endl;
+              
+    myfile.close();
+
+        }
+    }
+    
+    
     
     unsigned long i = 0;
     
@@ -180,12 +220,9 @@ int main()
 
 
 
-// myfile<<endl<<"This tree has cardinality "<<sigma2<<".";
 
 
-    myfile.close();
     
-//  auto sigma2 = DynamicTensorProduct(X,TensorProduct(T,Q).domain, myfile);
 //  auto sigma2 = DynamicTensorProduct(X,T, myfile);
 
 
@@ -194,13 +231,6 @@ int main()
 
 //auto && sigma3 = TensorProduct(Y,TensorProduct(T,Q).domain);
 
-    auto t2 = Clock::now();
-    long double mytime = std::chrono::duration_cast<std::chrono::nanoseconds> (t2 - t1).count() / double (1000000000);
-    
-    
-    std::cout << "It took "
-              << mytime
-              << " seconds" << std::endl;
 //                 cout<<endl<<"number of desc: "<<sigma3.Cardinality()<<endl;
 
 //

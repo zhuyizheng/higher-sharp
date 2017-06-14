@@ -181,30 +181,30 @@ constexpr Level_332_FactorNode zeroLevel_332_FactorNode = Level_332_FactorNode (
 class Level_332_Factor;
 
 string to_string (const Level_21_Desc & D,
-               const unsigned & d = 0);
+                  const unsigned & d = 0);
 
 string to_string (const leq_2_Sequence & s);
 
 string to_string (const Level_221_Desc & C,
-               const unsigned & d = 0);
+                  const unsigned & d = 0);
 string to_string (const Level_322_Desc & B,
-               const unsigned & d = 0);
+                  const unsigned & d = 0);
 
 
 string to_string (const LevelOneTree & Q,
-               const unsigned & d = 0);
+                  const unsigned & d = 0);
 string to_string (const Level_leq_2_Tree & Q,
-               const unsigned & d = 0);
+                  const unsigned & d = 0);
 string to_string (const LevelTwoTree & Q,
-               const unsigned & d = 0);
+                  const unsigned & d = 0);
 string to_string (const PartialLevel_leq_2_Tree & Q,
-               const unsigned & d = 0);
+                  const unsigned & d = 0);
 string to_string (const LevelThreeTree & Q,
-               const unsigned & d = 0);
+                  const unsigned & d = 0);
 string to_string (const Level_332_Factor & Q,
-               const unsigned & d = 0);
+                  const unsigned & d = 0);
 string to_string (const Level_222_Factor & Q,
-               const unsigned & d = 0);
+                  const unsigned & d = 0);
 
 //
 //template <typename T>
@@ -597,8 +597,8 @@ class Tree
     friend class LevelTwoTreeBasedDesc;
     friend void Flatten (Tree<unsigned long> & f);
     
-template <typename VALUETYPE>
-void Flatten (FuncTree<unsigned long,VALUETYPE> &);
+    template <typename VALUETYPE>
+    void Flatten (FuncTree<unsigned long, VALUETYPE> &);
     
     
 public:
@@ -1642,7 +1642,7 @@ FuncTreeNode<unsigned long, VALUETYPE> * AddChildBelow (
 
 void Flatten (Tree<unsigned long> & f)
 {
-    if (f.IsTrivial())
+    if (f.IsTrivial() )
         return;
     TreeNode<unsigned long> * current = f.SmallestNode();
     current->parent = f.root;
@@ -1669,7 +1669,7 @@ void Flatten (Tree<unsigned long> & f)
 template <typename VALUETYPE>
 void Flatten (FuncTree<unsigned long, VALUETYPE> & f)
 {
-    if (f.IsTrivial())
+    if (f.IsTrivial() )
         return;
     FuncTreeNode<unsigned long, VALUETYPE> * current = f.SmallestNode();
     current->parent = f.root;
@@ -4781,7 +4781,6 @@ unsigned long DynamicTensorProduct (const Level_leq_2_Tree & T,
 {
     if (myfile.is_open() )
     {
-    
         int depth = 0;
         
         myfile << "(0)" << endl;
@@ -8635,12 +8634,9 @@ bool ShowUpInSignStar (const leq_2_Sequence & q,
     }
     else
     {
-        for (auto && i : D.enumeration)
-        {
-            if ( D.Degree() == DEGREE::TWO &&
-                    D.sequence_2 == std::get<2> (q) )
-                return true;
-        }
+        if ( D.Degree() == DEGREE::TWO &&
+                D.sequence_2 == std::get<2> (q) )
+            return true;
         return false;
     }
 }
@@ -9653,20 +9649,20 @@ Level_332_Factor TensorProduct (const LevelThreeTree Y, const Level_leq_2_Tree &
 
 
 string to_string (const Level_21_Desc & D,
-               const unsigned & d )
+                  const unsigned & d )
 {
     return D.to_string (d);
 }
 
 string to_string (const Level_221_Desc & D,
-               const unsigned & d)
+                  const unsigned & d)
 {
     return D.String221 (d);
 }
 
 
 string to_string (const Level_322_Desc & B,
-               const unsigned & d )
+                  const unsigned & d )
 {
     return B.to_string (d);
 }
@@ -9727,59 +9723,67 @@ string Level_322_Desc::to_string (const unsigned d) const
 }
 
 string to_string (const LevelTwoTree & Q,
-               const unsigned & d)
+                  const unsigned & d)
 {
     return Q.to_string (d);
 }
 string to_string (const PartialLevel_leq_2_Tree & Q,
-               const unsigned & d)
+                  const unsigned & d)
 {
     return Q.to_string (d);
 }
 string to_string (const LevelThreeTree & Q,
-               const unsigned & d)
+                  const unsigned & d)
 {
     return Q.to_string (d);
 }
 string to_string (const LevelOneTree & Q,
-               const unsigned & d)
+                  const unsigned & d)
 {
     return Q.to_string (d);
 }
 string to_string (const Level_leq_2_Tree & Q,
-               const unsigned & d)
+                  const unsigned & d)
 {
     return Q.to_string (d);
 }
 string to_string (const Level_332_Factor & Q,
-               const unsigned & d)
+                  const unsigned & d)
 {
     return Q.to_string (d);
 }
 string to_string (const Level_222_Factor & Q,
-               const unsigned & d)
+                  const unsigned & d)
 {
     return Q.to_string (d);
 }
 
-vector<pair<int,int>> Count (const LevelTwoTree & Q){
-    vector<pair<int,int>> output;
+vector<pair<int, int>> Count (const LevelTwoTree & Q)
+{
+    vector<pair<int, int>> output;
     for (auto && i = Q.Root();
-                i != nullptr;
-                i = i->BKLeft()){
-        if (output.size() <= i->Length()){
-            if (Q.Degree(i) == DEGREE::ZERO){
-                output.emplace_back(1,0);
+            i != nullptr;
+            i = i->BKLeft() )
+    {
+        if (output.size() <= i->Length() )
+        {
+            if (Q.Degree (i) == DEGREE::ZERO)
+            {
+                output.emplace_back (1, 0);
             }
-            else{
-                                output.emplace_back(1,1);
+            else
+            {
+                output.emplace_back (1, 1);
             }
         }
-        else{
-             if (Q.Degree(i) == DEGREE::ZERO){
+        else
+        {
+            if (Q.Degree (i) == DEGREE::ZERO)
+            {
                 ++ output[i->Length()].first;
             }
-            else{
+            else
+            {
                 ++ output[i->Length()].first;
                 ++ output[i->Length()].second;
             }

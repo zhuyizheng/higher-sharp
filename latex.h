@@ -1,7 +1,7 @@
 #ifndef LATEX_H_INCLUDED
 #define LATEX_H_INCLUDED
 
-constexpr  string latexpre = "\\newcommand\\newcommand{\\comp}[2]{{}^{#1}\\!#2}\n\\newcommand{\\tree}{\\operatorname{tree}}\n\\newcommand{\\node}{\\operatorname{node}}\n";
+ string latexpre = "\\newcommand\\newcommand{\\comp}[2]{{}^{#1}\\!#2}\n\\newcommand{\\tree}{\\operatorname{tree}}\n\\newcommand{\\node}{\\operatorname{node}}\n";
 
 string Latex (const DEGREE & d)
 {
