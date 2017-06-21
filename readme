@@ -8,7 +8,7 @@ compiles with gcc 4.8.4 with c++11 option, e.g. run these commands
 
 git clone https://github.com/zhuyizheng/Higher-sharp/
 cd Higher-sharp/
-g++ -std=c++11 main.cpp -o highersharp
+g++ -std=c++11 -O2 main.cpp -o highersharp
 ./highersharp
 
 **************************************************************
