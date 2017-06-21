@@ -1,6 +1,16 @@
 # Higher-sharp
 Compute the combinatorics in my paper
 
-compiles with gcc 4.8.4 with c++11 option
+compiles with gcc 4.8.4 with c++11 option, e.g. run these commands
+
+
+**************************************************************
+
+git clone https://github.com/zhuyizheng/Higher-sharp/
+cd Higher-sharp/
+g++ -std=c++11 main.cpp -o highersharp
+
+**************************************************************
+
 
 There is a tiny bug with inputting a level-2 or level-3 tree. If the domain has ((0)),((0,0)),((0,1)),((0,0,0)),((1)),((0,1),(0)) the program automatically renames them to ((3)),((1)),((2)),((0)),((4)),((2),(0)). As far as isomorphism type concerned, I don't care. 
