@@ -143,7 +143,7 @@ FinalTreeWithNode;
 
 class Level_322_Desc;
 
-constexpr Level_leq_2_TreeNode
+Level_leq_2_TreeNode
 zeroLevel_leq_2_TreeNode = Level_leq_2_TreeNode
 {
     DEGREE::ZERO,
@@ -161,7 +161,7 @@ zero_leq_2_Sequence = leq_2_Sequence
 
 class Level_leq_2_Tree;
 
-constexpr Level_222_FactorNode
+Level_222_FactorNode
 zeroLevel_leq_2_FactorNode = Level_222_FactorNode
 {
     DEGREE::ZERO,
@@ -176,7 +176,7 @@ class LevelThreeTree;
 typedef pair<LevelThreeTreeNode*, FuncTreeNode<SingleSequence, Level_322_Desc>*>
 Level_332_FactorNode;
 
-constexpr Level_332_FactorNode zeroLevel_332_FactorNode = Level_332_FactorNode (nullptr, nullptr);
+Level_332_FactorNode zeroLevel_332_FactorNode = Level_332_FactorNode (nullptr, nullptr);
 
 class Level_332_Factor;
 
@@ -2662,7 +2662,10 @@ public:
     LevelTwoTree tree_2;
     
 public:
-    Level_leq_2_Tree() = default;
+    Level_leq_2_Tree() :  
+	tree_1 (LevelOneTree()),
+	tree_2 (LevelTwoTree())
+{}
     
     ~Level_leq_2_Tree() = default;
     
