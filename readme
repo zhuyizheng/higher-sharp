@@ -1,4 +1,4 @@
-# Higher-sharp
+# higher-sharp
 Compute the combinatorics in my paper
 
 compiles with gcc 4.8.4 with c++11 option, e.g. run these commands
@@ -6,8 +6,8 @@ compiles with gcc 4.8.4 with c++11 option, e.g. run these commands
 
 **************************************************************
 
-git clone https://github.com/zhuyizheng/Higher-sharp/
-cd Higher-sharp/
+git clone https://github.com/zhuyizheng/higher-sharp/
+cd higher-sharp/
 g++ -std=c++11 -O2 main.cpp -o highersharp
 ./highersharp
 
